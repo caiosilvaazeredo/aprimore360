@@ -15,12 +15,40 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-change-in-production
 # Inicializa Firebase Admin
 def initialize_firebase():
     try:
+        # Verifica se as variáveis de ambiente estão configuradas
+        required_vars = [
+            'FIREBASE_PROJECT_ID',
+            'FIREBASE_PRIVATE_KEY_ID', 
+            'FIREBASE_PRIVATE_KEY',
+            'FIREBASE_CLIENT_EMAIL',
+            'FIREBASE_CLIENT_ID'
+        ]
+        
+        missing_vars = [var for var in required_vars if not os.getenv(var)]
+        
+        if missing_vars:
+            print("\n❌ ERRO: Variáveis de ambiente não configuradas!")
+            print(f"Faltando: {', '.join(missing_vars)}\n")
+            print("📋 PASSOS PARA CORRIGIR:")
+            print("1. Crie um arquivo '.env' na raiz do projeto")
+            print("2. Copie o conteúdo de '.env.example'")
+            print("3. Preencha com suas credenciais do Firebase")
+            print("4. Acesse: https://console.firebase.google.com/")
+            print("   > Configurações > Contas de serviço > Gerar nova chave\n")
+            raise ValueError(f"Variáveis de ambiente faltando: {', '.join(missing_vars)}")
+        
         # Cria credenciais do Firebase a partir das variáveis de ambiente
+        private_key = os.getenv('FIREBASE_PRIVATE_KEY')
+        
+        # Corrige formatação da chave privada
+        if '\\n' in private_key:
+            private_key = private_key.replace('\\n', '\n')
+        
         cred_dict = {
             "type": "service_account",
             "project_id": os.getenv('FIREBASE_PROJECT_ID'),
             "private_key_id": os.getenv('FIREBASE_PRIVATE_KEY_ID'),
-            "private_key": os.getenv('FIREBASE_PRIVATE_KEY').replace('\\n', '\n'),
+            "private_key": private_key,
             "client_email": os.getenv('FIREBASE_CLIENT_EMAIL'),
             "client_id": os.getenv('FIREBASE_CLIENT_ID'),
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -32,9 +60,13 @@ def initialize_firebase():
         cred = credentials.Certificate(cred_dict)
         firebase_admin.initialize_app(cred)
         print("✓ Firebase inicializado com sucesso!")
+    except ValueError as e:
+        print(f"\n{e}\n")
+        raise SystemExit(1)
     except Exception as e:
-        print(f"✗ Erro ao inicializar Firebase: {e}")
-        raise
+        print(f"\n✗ Erro ao inicializar Firebase: {e}\n")
+        print("Verifique se suas credenciais estão corretas no arquivo .env")
+        raise SystemExit(1)
 
 # Inicializa Firebase
 initialize_firebase()
