@@ -1,0 +1,566 @@
+{% extends "base.html" %}
+
+{% block title %}Clientes - Gestão Comercial{% endblock %}
+{% block page_title %}Clientes{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Actions -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" class="form-control" id="searchInput" placeholder="Buscar clientes...">
+            </div>
+        </div>
+        <div class="col-md-6 text-end">
+            <button class="btn btn-gradient" onclick="openClientModal()">
+                <i class="fas fa-plus"></i> Novo Cliente
+            </button>
+            <button class="btn btn-outline-primary" onclick="exportClients()">
+                <i class="fas fa-download"></i> Exportar
+            </button>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="btn-group">
+                <button class="btn btn-sm btn-outline-secondary active" onclick="filterClients('todos')">
+                    Todos <span class="badge bg-secondary ms-1" id="countTodos">0</span>
+                </button>
+                <button class="btn btn-sm btn-outline-success" onclick="filterClients('ativo')">
+                    Ativos <span class="badge bg-success ms-1" id="countAtivos">0</span>
+                </button>
+                <button class="btn btn-sm btn-outline-warning" onclick="filterClients('pendente')">
+                    Pendentes <span class="badge bg-warning ms-1" id="countPendentes">0</span>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="filterClients('inativo')">
+                    Inativos <span class="badge bg-danger ms-1" id="countInativos">0</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Clients Table -->
+    <div class="custom-table">
+        <div class="table-responsive">
+            <table class="table table-hover" id="clientsTable">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="selectAll">
+                        </th>
+                        <th>Nome Fantasia</th>
+                        <th>CNPJ</th>
+                        <th>Telefone</th>
+                        <th>Cidade</th>
+                        <th>Status</th>
+                        <th>Última Compra</th>
+                        <th>Total</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="clientsTableBody">
+                    <tr>
+                        <td colspan="9" class="text-center">Carregando clientes...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Client Modal -->
+<div class="modal fade" id="clientModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="clientModalTitle">Novo Cliente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="clientForm">
+                    <input type="hidden" id="clientId">
+                    
+                    <ul class="nav nav-tabs mb-3">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#dadosGerais">Dados Gerais</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#endereco">Endereço</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#contato">Contato</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#financeiro">Financeiro</a>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content">
+                        <!-- Dados Gerais -->
+                        <div class="tab-pane fade show active" id="dadosGerais">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Razão Social *</label>
+                                    <input type="text" class="form-control" id="razaoSocial" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Nome Fantasia *</label>
+                                    <input type="text" class="form-control" id="fantasia" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">CNPJ *</label>
+                                    <input type="text" class="form-control" id="cnpj" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Inscrição Estadual</label>
+                                    <input type="text" class="form-control" id="inscricaoEstadual">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Status</label>
+                                    <select class="form-select" id="status">
+                                        <option value="ativo">Ativo</option>
+                                        <option value="inativo">Inativo</option>
+                                        <option value="pendente">Pendente</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Website</label>
+                                    <input type="url" class="form-control" id="website">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Endereço -->
+                        <div class="tab-pane fade" id="endereco">
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">CEP</label>
+                                    <input type="text" class="form-control" id="cep" onblur="buscarCep()">
+                                </div>
+                                <div class="col-md-7 mb-3">
+                                    <label class="form-label">Logradouro</label>
+                                    <input type="text" class="form-control" id="logradouro">
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <label class="form-label">Número</label>
+                                    <input type="text" class="form-control" id="numero">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Complemento</label>
+                                    <input type="text" class="form-control" id="complemento">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Bairro</label>
+                                    <input type="text" class="form-control" id="bairro">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Cidade</label>
+                                    <input type="text" class="form-control" id="cidade">
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <label class="form-label">UF</label>
+                                    <select class="form-select" id="uf">
+                                        <option value="">Selecione</option>
+                                        <option value="SP">SP</option>
+                                        <option value="RJ">RJ</option>
+                                        <option value="MG">MG</option>
+                                        <option value="ES">ES</option>
+                                        <!-- Add more states -->
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Contato -->
+                        <div class="tab-pane fade" id="contato">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Telefone *</label>
+                                    <input type="text" class="form-control" id="telefone" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Celular</label>
+                                    <input type="text" class="form-control" id="celular">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Contato Principal</label>
+                                    <input type="text" class="form-control" id="contatoNome">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Cargo do Contato</label>
+                                    <input type="text" class="form-control" id="contatoCargo">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Telefone do Contato</label>
+                                    <input type="text" class="form-control" id="contatoTelefone">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Financeiro -->
+                        <div class="tab-pane fade" id="financeiro">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Limite de Crédito</label>
+                                    <input type="number" class="form-control" id="limite" step="0.01">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Condição de Pagamento</label>
+                                    <select class="form-select" id="condicaoPagamento">
+                                        <option value="a-vista">À Vista</option>
+                                        <option value="30">30 dias</option>
+                                        <option value="30/60">30/60 dias</option>
+                                        <option value="30/60/90">30/60/90 dias</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label class="form-label">Observações</label>
+                                    <textarea class="form-control" id="observacoes" rows="3"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-gradient" onclick="saveClient()">
+                    <i class="fas fa-save"></i> Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let allClients = [];
+    let currentFilter = 'todos';
+    
+    // Load Clients
+    async function loadClients() {
+        try {
+            showLoading();
+            
+            const response = await fetch('/api/clientes');
+            allClients = await response.json();
+            
+            // Update counts
+            updateCounts();
+            
+            // Display clients
+            displayClients(allClients);
+            
+        } catch (error) {
+            console.error('Erro ao carregar clientes:', error);
+            Swal.fire('Erro', 'Erro ao carregar clientes', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+    
+    // Display Clients
+    function displayClients(clients) {
+        const tbody = document.getElementById('clientsTableBody');
+        
+        if (clients.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center">Nenhum cliente encontrado</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = clients.map(client => `
+            <tr>
+                <td>
+                    <input type="checkbox" class="client-checkbox" value="${client.id}">
+                </td>
+                <td>
+                    <strong>${client.fantasia}</strong><br>
+                    <small class="text-muted">${client.razaoSocial}</small>
+                </td>
+                <td>${client.cnpj}</td>
+                <td>${client.telefone}</td>
+                <td>${client.endereco?.cidade || 'N/A'}</td>
+                <td>
+                    <span class="badge-status badge-${client.status === 'ativo' ? 'active' : client.status === 'inativo' ? 'inactive' : 'pending'}">
+                        ${client.status === 'ativo' ? 'Ativo' : client.status === 'inativo' ? 'Inativo' : 'Pendente'}
+                    </span>
+                </td>
+                <td>${client.ultimoPedido ? formatDate(client.ultimoPedido) : 'Nunca'}</td>
+                <td><strong>${formatCurrency(client.totalCompras || 0)}</strong></td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" onclick="viewClient('${client.id}')" title="Visualizar">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-outline-success" onclick="editClient('${client.id}')" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="deleteClient('${client.id}')" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+        
+        // Initialize DataTable if not already
+        if (!$.fn.DataTable.isDataTable('#clientsTable')) {
+            $('#clientsTable').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json'
+                },
+                pageLength: 25,
+                dom: 'rtip'
+            });
+        }
+    }
+    
+    // Update Counts
+    function updateCounts() {
+        document.getElementById('countTodos').textContent = allClients.length;
+        document.getElementById('countAtivos').textContent = allClients.filter(c => c.status === 'ativo').length;
+        document.getElementById('countPendentes').textContent = allClients.filter(c => c.status === 'pendente').length;
+        document.getElementById('countInativos').textContent = allClients.filter(c => c.status === 'inativo').length;
+    }
+    
+    // Filter Clients
+    function filterClients(status) {
+        currentFilter = status;
+        
+        // Update active button
+        document.querySelectorAll('.btn-group .btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        // Filter clients
+        let filtered = allClients;
+        if (status !== 'todos') {
+            filtered = allClients.filter(c => c.status === status);
+        }
+        
+        displayClients(filtered);
+    }
+    
+    // Open Client Modal
+    function openClientModal() {
+        document.getElementById('clientForm').reset();
+        document.getElementById('clientId').value = '';
+        document.getElementById('clientModalTitle').textContent = 'Novo Cliente';
+        new bootstrap.Modal(document.getElementById('clientModal')).show();
+    }
+    
+    // Edit Client
+    function editClient(clientId) {
+        const client = allClients.find(c => c.id === clientId);
+        if (!client) return;
+        
+        document.getElementById('clientId').value = client.id;
+        document.getElementById('clientModalTitle').textContent = 'Editar Cliente';
+        
+        // Fill form
+        document.getElementById('razaoSocial').value = client.razaoSocial;
+        document.getElementById('fantasia').value = client.fantasia;
+        document.getElementById('cnpj').value = client.cnpj;
+        document.getElementById('inscricaoEstadual').value = client.inscricaoEstadual || '';
+        document.getElementById('status').value = client.status;
+        document.getElementById('website').value = client.website || '';
+        
+        // Address
+        if (client.endereco) {
+            document.getElementById('cep').value = client.endereco.cep || '';
+            document.getElementById('logradouro').value = client.endereco.logradouro || '';
+            document.getElementById('numero').value = client.endereco.numero || '';
+            document.getElementById('complemento').value = client.endereco.complemento || '';
+            document.getElementById('bairro').value = client.endereco.bairro || '';
+            document.getElementById('cidade').value = client.endereco.cidade || '';
+            document.getElementById('uf').value = client.endereco.uf || '';
+        }
+        
+        // Contact
+        document.getElementById('telefone').value = client.telefone;
+        document.getElementById('celular').value = client.celular || '';
+        document.getElementById('email').value = client.email || '';
+        
+        if (client.contato) {
+            document.getElementById('contatoNome').value = client.contato.nome || '';
+            document.getElementById('contatoCargo').value = client.contato.cargo || '';
+            document.getElementById('contatoTelefone').value = client.contato.telefone || '';
+        }
+        
+        // Financial
+        document.getElementById('limite').value = client.limite || '';
+        document.getElementById('condicaoPagamento').value = client.condicaoPagamento || '30';
+        document.getElementById('observacoes').value = client.observacoes || '';
+        
+        new bootstrap.Modal(document.getElementById('clientModal')).show();
+    }
+    
+    // Save Client
+    async function saveClient() {
+        const clientId = document.getElementById('clientId').value;
+        const isEdit = !!clientId;
+        
+        const clientData = {
+            razaoSocial: document.getElementById('razaoSocial').value,
+            fantasia: document.getElementById('fantasia').value,
+            cnpj: document.getElementById('cnpj').value,
+            inscricaoEstadual: document.getElementById('inscricaoEstadual').value,
+            status: document.getElementById('status').value,
+            website: document.getElementById('website').value,
+            telefone: document.getElementById('telefone').value,
+            celular: document.getElementById('celular').value,
+            email: document.getElementById('email').value,
+            endereco: {
+                cep: document.getElementById('cep').value,
+                logradouro: document.getElementById('logradouro').value,
+                numero: document.getElementById('numero').value,
+                complemento: document.getElementById('complemento').value,
+                bairro: document.getElementById('bairro').value,
+                cidade: document.getElementById('cidade').value,
+                uf: document.getElementById('uf').value
+            },
+            contato: {
+                nome: document.getElementById('contatoNome').value,
+                cargo: document.getElementById('contatoCargo').value,
+                telefone: document.getElementById('contatoTelefone').value
+            },
+            limite: parseFloat(document.getElementById('limite').value) || 0,
+            condicaoPagamento: document.getElementById('condicaoPagamento').value,
+            observacoes: document.getElementById('observacoes').value
+        };
+        
+        try {
+            showLoading();
+            
+            const url = isEdit ? `/api/clientes/${clientId}` : '/api/clientes';
+            const method = isEdit ? 'PUT' : 'POST';
+            
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(clientData)
+            });
+            
+            if (response.ok) {
+                Swal.fire('Sucesso', `Cliente ${isEdit ? 'atualizado' : 'cadastrado'} com sucesso!`, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('clientModal')).hide();
+                loadClients();
+            } else {
+                const error = await response.json();
+                Swal.fire('Erro', error.error || 'Erro ao salvar cliente', 'error');
+            }
+            
+        } catch (error) {
+            console.error('Erro ao salvar cliente:', error);
+            Swal.fire('Erro', 'Erro ao salvar cliente', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+    
+    // Delete Client
+    async function deleteClient(clientId) {
+        const result = await Swal.fire({
+            title: 'Confirmar exclusão?',
+            text: 'Esta ação não pode ser desfeita!',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sim, excluir',
+            cancelButtonText: 'Cancelar'
+        });
+        
+        if (result.isConfirmed) {
+            try {
+                showLoading();
+                
+                const response = await fetch(`/api/clientes/${clientId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    Swal.fire('Excluído!', 'Cliente excluído com sucesso.', 'success');
+                    loadClients();
+                } else {
+                    Swal.fire('Erro', 'Erro ao excluir cliente', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Erro ao excluir cliente:', error);
+                Swal.fire('Erro', 'Erro ao excluir cliente', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+    }
+    
+    // View Client
+    function viewClient(clientId) {
+        window.location.href = `/clientes/${clientId}`;
+    }
+    
+    // Buscar CEP
+    async function buscarCep() {
+        const cep = document.getElementById('cep').value.replace(/\D/g, '');
+        
+        if (cep.length !== 8) return;
+        
+        try {
+            const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+            const data = await response.json();
+            
+            if (!data.erro) {
+                document.getElementById('logradouro').value = data.logradouro;
+                document.getElementById('bairro').value = data.bairro;
+                document.getElementById('cidade').value = data.localidade;
+                document.getElementById('uf').value = data.uf;
+            }
+        } catch (error) {
+            console.error('Erro ao buscar CEP:', error);
+        }
+    }
+    
+    // Search
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        const searchTerm = this.value.toLowerCase();
+        
+        const filtered = allClients.filter(client => 
+            client.fantasia.toLowerCase().includes(searchTerm) ||
+            client.razaoSocial.toLowerCase().includes(searchTerm) ||
+            client.cnpj.includes(searchTerm) ||
+            (client.endereco?.cidade && client.endereco.cidade.toLowerCase().includes(searchTerm))
+        );
+        
+        displayClients(filtered);
+    });
+    
+    // Select All
+    document.getElementById('selectAll').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.client-checkbox');
+        checkboxes.forEach(cb => cb.checked = this.checked);
+    });
+    
+    // Export Clients
+    function exportClients() {
+        // Implement export functionality
+        Swal.fire('Info', 'Funcionalidade de exportação em desenvolvimento', 'info');
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', loadClients);
+</script>
+{% endblock %}
