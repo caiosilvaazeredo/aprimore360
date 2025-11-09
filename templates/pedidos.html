@@ -1,0 +1,693 @@
+{% extends "base.html" %}
+
+{% block title %}Pedidos - Gestão Comercial{% endblock %}
+{% block page_title %}Pedidos de Venda{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Actions -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" class="form-control" id="searchOrder" placeholder="Buscar pedidos...">
+                <select class="form-select" style="max-width: 200px;" id="filterStatus">
+                    <option value="">Todos Status</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="aprovado">Aprovado</option>
+                    <option value="faturado">Faturado</option>
+                    <option value="cancelado">Cancelado</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-gradient" onclick="openOrderModal()">
+                <i class="fas fa-plus"></i> Novo Pedido
+            </button>
+            <button class="btn btn-outline-primary" onclick="exportOrders()">
+                <i class="fas fa-download"></i> Exportar
+            </button>
+        </div>
+    </div>
+    
+    <!-- Orders Summary -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Total em Pedidos</h6>
+                        <h3 class="mb-0" id="totalPedidos">R$ 0</h3>
+                    </div>
+                    <div class="icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Pedidos Hoje</h6>
+                        <h3 class="mb-0" id="pedidosHoje">0</h3>
+                    </div>
+                    <div class="icon" style="background: #10b981; color: white;">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Ticket Médio</h6>
+                        <h3 class="mb-0" id="ticketMedio">R$ 0</h3>
+                    </div>
+                    <div class="icon" style="background: #f59e0b; color: white;">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Comissão Total</h6>
+                        <h3 class="mb-0 text-success" id="comissaoTotal">R$ 0</h3>
+                    </div>
+                    <div class="icon" style="background: #8b5cf6; color: white;">
+                        <i class="fas fa-hand-holding-usd"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Orders Table -->
+    <div class="custom-table">
+        <div class="table-responsive">
+            <table class="table table-hover" id="ordersTable">
+                <thead>
+                    <tr>
+                        <th>Número</th>
+                        <th>Data</th>
+                        <th>Cliente</th>
+                        <th>Produtos</th>
+                        <th>Valor Total</th>
+                        <th>Status</th>
+                        <th>Pagamento</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersTableBody">
+                    <tr>
+                        <td colspan="8" class="text-center">Carregando pedidos...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Order Modal -->
+<div class="modal fade" id="orderModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderModalTitle">Novo Pedido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="orderForm">
+                    <input type="hidden" id="orderId">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Cliente *</label>
+                            <select class="form-select" id="orderClienteId" required>
+                                <option value="">Selecione um cliente</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Data do Pedido *</label>
+                            <input type="date" class="form-control" id="orderData" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Previsão de Entrega</label>
+                            <input type="date" class="form-control" id="previsaoEntrega">
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Products Section -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6>Produtos</h6>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addProductRow()">
+                            <i class="fas fa-plus"></i> Adicionar Produto
+                        </button>
+                    </div>
+                    
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40%">Produto</th>
+                                    <th style="width: 15%">Quantidade</th>
+                                    <th style="width: 15%">Valor Unit.</th>
+                                    <th style="width: 10%">Desc. %</th>
+                                    <th style="width: 15%">Total</th>
+                                    <th style="width: 5%"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTableBody">
+                                <tr id="productRow0">
+                                    <td>
+                                        <select class="form-select form-select-sm product-select" onchange="updateProductPrice(0)">
+                                            <option value="">Selecione...</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control form-control-sm" min="1" value="1" onchange="calculateRowTotal(0)">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control form-control-sm" step="0.01" value="0" onchange="calculateRowTotal(0)">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control form-control-sm" min="0" max="100" value="0" onchange="calculateRowTotal(0)">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm" readonly value="R$ 0,00">
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-danger" onclick="removeProductRow(0)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4" class="text-end"><strong>Subtotal:</strong></td>
+                                    <td colspan="2"><strong id="orderSubtotal">R$ 0,00</strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4" class="text-end"><strong>Desconto:</strong></td>
+                                    <td colspan="2">
+                                        <input type="number" class="form-control form-control-sm" id="orderDesconto" value="0" step="0.01" onchange="calculateTotal()">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4" class="text-end"><strong>Total:</strong></td>
+                                    <td colspan="2"><strong class="text-success" id="orderTotal">R$ 0,00</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label">Condição de Pagamento</label>
+                            <select class="form-select" id="condicaoPagamento">
+                                <option value="a-vista">À Vista</option>
+                                <option value="30">30 dias</option>
+                                <option value="30/60">30/60 dias</option>
+                                <option value="30/60/90">30/60/90 dias</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Forma de Pagamento</label>
+                            <select class="form-select" id="formaPagamento">
+                                <option value="boleto">Boleto</option>
+                                <option value="transferencia">Transferência</option>
+                                <option value="cartao">Cartão</option>
+                                <option value="pix">PIX</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" id="orderStatus">
+                                <option value="pendente">Pendente</option>
+                                <option value="aprovado">Aprovado</option>
+                                <option value="faturado">Faturado</option>
+                                <option value="cancelado">Cancelado</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label class="form-label">Observações</label>
+                        <textarea class="form-control" id="orderObservacoes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-outline-primary" onclick="saveOrder(true)">
+                    <i class="fas fa-save"></i> Salvar como Rascunho
+                </button>
+                <button type="button" class="btn btn-gradient" onclick="saveOrder(false)">
+                    <i class="fas fa-check"></i> Finalizar Pedido
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let orders = [];
+    let clients = [];
+    let products = [];
+    let productRowCount = 1;
+    
+    // Load Orders
+    async function loadOrders() {
+        try {
+            showLoading();
+            
+            const response = await fetch('/api/pedidos');
+            orders = await response.json();
+            
+            // Update summary
+            updateSummary();
+            
+            // Display orders
+            displayOrders(orders);
+            
+            // Load clients and products for dropdowns
+            await loadClientsAndProducts();
+            
+        } catch (error) {
+            console.error('Erro ao carregar pedidos:', error);
+        } finally {
+            hideLoading();
+        }
+    }
+    
+    // Update Summary
+    function updateSummary() {
+        const today = new Date().toISOString().split('T')[0];
+        const todayOrders = orders.filter(o => o.data === today);
+        
+        const total = orders.reduce((sum, o) => sum + (o.valorTotal || 0), 0);
+        const commission = total * 0.05;
+        const average = orders.length > 0 ? total / orders.length : 0;
+        
+        document.getElementById('totalPedidos').textContent = formatCurrency(total);
+        document.getElementById('pedidosHoje').textContent = todayOrders.length;
+        document.getElementById('ticketMedio').textContent = formatCurrency(average);
+        document.getElementById('comissaoTotal').textContent = formatCurrency(commission);
+    }
+    
+    // Display Orders
+    function displayOrders(ordersList) {
+        const tbody = document.getElementById('ordersTableBody');
+        
+        if (ordersList.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center">Nenhum pedido encontrado</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = ordersList.map(order => {
+            const statusClass = order.status === 'aprovado' ? 'active' : 
+                                order.status === 'cancelado' ? 'inactive' : 
+                                order.status === 'faturado' ? 'success' : 'pending';
+            
+            return `
+                <tr>
+                    <td><strong>${order.numero || order.id}</strong></td>
+                    <td>${formatDate(order.data)}</td>
+                    <td>${order.cliente || 'N/A'}</td>
+                    <td>${order.itens ? order.itens.length : 0} itens</td>
+                    <td><strong>${formatCurrency(order.valorTotal)}</strong></td>
+                    <td>
+                        <span class="badge-status badge-${statusClass}">
+                            ${order.status === 'aprovado' ? 'Aprovado' : 
+                              order.status === 'cancelado' ? 'Cancelado' : 
+                              order.status === 'faturado' ? 'Faturado' : 'Pendente'}
+                        </span>
+                    </td>
+                    <td>${order.condicaoPagamento || 'À Vista'}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="viewOrder('${order.id}')" title="Visualizar">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-outline-success" onclick="editOrder('${order.id}')" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-outline-info" onclick="printOrder('${order.id}')" title="Imprimir">
+                                <i class="fas fa-print"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        
+        // Initialize DataTable if not already
+        if (!$.fn.DataTable.isDataTable('#ordersTable')) {
+            $('#ordersTable').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json'
+                },
+                pageLength: 25,
+                order: [[1, 'desc']],
+                dom: 'rtip'
+            });
+        }
+    }
+    
+    // Load Clients and Products
+    async function loadClientsAndProducts() {
+        try {
+            // Load clients
+            const clientsResponse = await fetch('/api/clientes');
+            clients = await clientsResponse.json();
+            
+            const clientSelect = document.getElementById('orderClienteId');
+            clientSelect.innerHTML = '<option value="">Selecione um cliente</option>' + 
+                clients.map(c => `<option value="${c.id}">${c.fantasia}</option>`).join('');
+            
+            // Load products
+            const productsResponse = await fetch('/api/produtos');
+            products = await productsResponse.json();
+            
+            updateProductSelects();
+            
+        } catch (error) {
+            console.error('Erro ao carregar clientes e produtos:', error);
+        }
+    }
+    
+    // Update Product Selects
+    function updateProductSelects() {
+        const selects = document.querySelectorAll('.product-select');
+        const productOptions = '<option value="">Selecione...</option>' + 
+            products.map(p => `<option value="${p.id}" data-price="${p.preco}">${p.nome} - ${p.codigo}</option>`).join('');
+        
+        selects.forEach(select => {
+            const currentValue = select.value;
+            select.innerHTML = productOptions;
+            select.value = currentValue;
+        });
+    }
+    
+    // Open Order Modal
+    function openOrderModal() {
+        document.getElementById('orderForm').reset();
+        document.getElementById('orderId').value = '';
+        document.getElementById('orderModalTitle').textContent = 'Novo Pedido';
+        document.getElementById('orderData').value = new Date().toISOString().split('T')[0];
+        
+        // Reset products table
+        document.getElementById('productsTableBody').innerHTML = `
+            <tr id="productRow0">
+                <td>
+                    <select class="form-select form-select-sm product-select" onchange="updateProductPrice(0)">
+                        <option value="">Selecione...</option>
+                    </select>
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm" min="1" value="1" onchange="calculateRowTotal(0)">
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm" step="0.01" value="0" onchange="calculateRowTotal(0)">
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm" min="0" max="100" value="0" onchange="calculateRowTotal(0)">
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm" readonly value="R$ 0,00">
+                </td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeProductRow(0)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        
+        productRowCount = 1;
+        updateProductSelects();
+        
+        new bootstrap.Modal(document.getElementById('orderModal')).show();
+    }
+    
+    // Add Product Row
+    function addProductRow() {
+        const tbody = document.getElementById('productsTableBody');
+        const newRow = document.createElement('tr');
+        newRow.id = `productRow${productRowCount}`;
+        newRow.innerHTML = `
+            <td>
+                <select class="form-select form-select-sm product-select" onchange="updateProductPrice(${productRowCount})">
+                    <option value="">Selecione...</option>
+                </select>
+            </td>
+            <td>
+                <input type="number" class="form-control form-control-sm" min="1" value="1" onchange="calculateRowTotal(${productRowCount})">
+            </td>
+            <td>
+                <input type="number" class="form-control form-control-sm" step="0.01" value="0" onchange="calculateRowTotal(${productRowCount})">
+            </td>
+            <td>
+                <input type="number" class="form-control form-control-sm" min="0" max="100" value="0" onchange="calculateRowTotal(${productRowCount})">
+            </td>
+            <td>
+                <input type="text" class="form-control form-control-sm" readonly value="R$ 0,00">
+            </td>
+            <td>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeProductRow(${productRowCount})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        
+        tbody.appendChild(newRow);
+        productRowCount++;
+        updateProductSelects();
+    }
+    
+    // Remove Product Row
+    function removeProductRow(rowId) {
+        const row = document.getElementById(`productRow${rowId}`);
+        if (row) {
+            row.remove();
+            calculateTotal();
+        }
+    }
+    
+    // Update Product Price
+    function updateProductPrice(rowId) {
+        const row = document.getElementById(`productRow${rowId}`);
+        const select = row.querySelector('.product-select');
+        const priceInput = row.querySelectorAll('input')[1];
+        
+        const selectedOption = select.options[select.selectedIndex];
+        const price = selectedOption.getAttribute('data-price');
+        
+        if (price) {
+            priceInput.value = price;
+            calculateRowTotal(rowId);
+        }
+    }
+    
+    // Calculate Row Total
+    function calculateRowTotal(rowId) {
+        const row = document.getElementById(`productRow${rowId}`);
+        const inputs = row.querySelectorAll('input');
+        
+        const quantity = parseFloat(inputs[0].value) || 0;
+        const price = parseFloat(inputs[1].value) || 0;
+        const discount = parseFloat(inputs[2].value) || 0;
+        
+        const total = quantity * price * (1 - discount / 100);
+        inputs[3].value = formatCurrency(total);
+        
+        calculateTotal();
+    }
+    
+    // Calculate Total
+    function calculateTotal() {
+        let subtotal = 0;
+        
+        const rows = document.querySelectorAll('#productsTableBody tr');
+        rows.forEach(row => {
+            const inputs = row.querySelectorAll('input');
+            const quantity = parseFloat(inputs[0].value) || 0;
+            const price = parseFloat(inputs[1].value) || 0;
+            const discount = parseFloat(inputs[2].value) || 0;
+            
+            subtotal += quantity * price * (1 - discount / 100);
+        });
+        
+        const discountValue = parseFloat(document.getElementById('orderDesconto').value) || 0;
+        const total = subtotal - discountValue;
+        
+        document.getElementById('orderSubtotal').textContent = formatCurrency(subtotal);
+        document.getElementById('orderTotal').textContent = formatCurrency(total);
+    }
+    
+    // Save Order
+    async function saveOrder(isDraft) {
+        const orderId = document.getElementById('orderId').value;
+        const isEdit = !!orderId;
+        
+        // Collect items
+        const items = [];
+        const rows = document.querySelectorAll('#productsTableBody tr');
+        rows.forEach(row => {
+            const select = row.querySelector('.product-select');
+            const inputs = row.querySelectorAll('input');
+            
+            if (select.value) {
+                const product = products.find(p => p.id === select.value);
+                items.push({
+                    produtoId: select.value,
+                    produto: product.nome,
+                    quantidade: parseFloat(inputs[0].value),
+                    valorUnitario: parseFloat(inputs[1].value),
+                    desconto: parseFloat(inputs[2].value)
+                });
+            }
+        });
+        
+        const subtotal = items.reduce((sum, item) => 
+            sum + (item.quantidade * item.valorUnitario * (1 - item.desconto / 100)), 0);
+        const desconto = parseFloat(document.getElementById('orderDesconto').value) || 0;
+        
+        const orderData = {
+            clienteId: document.getElementById('orderClienteId').value,
+            data: document.getElementById('orderData').value,
+            previsaoEntrega: document.getElementById('previsaoEntrega').value,
+            itens: items,
+            subtotal: subtotal,
+            desconto: desconto,
+            valorTotal: subtotal - desconto,
+            condicaoPagamento: document.getElementById('condicaoPagamento').value,
+            formaPagamento: document.getElementById('formaPagamento').value,
+            status: isDraft ? 'rascunho' : document.getElementById('orderStatus').value,
+            observacoes: document.getElementById('orderObservacoes').value
+        };
+        
+        try {
+            showLoading();
+            
+            const url = isEdit ? `/api/pedidos/${orderId}` : '/api/pedidos';
+            const method = isEdit ? 'PUT' : 'POST';
+            
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(orderData)
+            });
+            
+            if (response.ok) {
+                Swal.fire('Sucesso', `Pedido ${isEdit ? 'atualizado' : 'criado'} com sucesso!`, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('orderModal')).hide();
+                loadOrders();
+            } else {
+                Swal.fire('Erro', 'Erro ao salvar pedido', 'error');
+            }
+            
+        } catch (error) {
+            console.error('Erro ao salvar pedido:', error);
+            Swal.fire('Erro', 'Erro ao salvar pedido', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+    
+    // View Order
+    function viewOrder(orderId) {
+        const order = orders.find(o => o.id === orderId);
+        if (!order) return;
+        
+        // Show order details
+        Swal.fire({
+            title: `Pedido ${order.numero || order.id}`,
+            html: `
+                <div class="text-start">
+                    <p><strong>Cliente:</strong> ${order.cliente}</p>
+                    <p><strong>Data:</strong> ${formatDate(order.data)}</p>
+                    <p><strong>Valor:</strong> ${formatCurrency(order.valorTotal)}</p>
+                    <p><strong>Status:</strong> ${order.status}</p>
+                    <p><strong>Itens:</strong> ${order.itens ? order.itens.length : 0}</p>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Editar',
+            cancelButtonText: 'Fechar'
+        }).then(result => {
+            if (result.isConfirmed) {
+                editOrder(orderId);
+            }
+        });
+    }
+    
+    // Edit Order
+    function editOrder(orderId) {
+        const order = orders.find(o => o.id === orderId);
+        if (!order) return;
+        
+        // Fill form with order data
+        // Implementation would be similar to edit client
+        
+        Swal.fire('Info', 'Edição de pedidos em desenvolvimento', 'info');
+    }
+    
+    // Print Order
+    function printOrder(orderId) {
+        window.print();
+    }
+    
+    // Export Orders
+    function exportOrders() {
+        Swal.fire('Info', 'Exportação de pedidos em desenvolvimento', 'info');
+    }
+    
+    // Search and Filter
+    document.getElementById('searchOrder').addEventListener('keyup', function() {
+        const searchTerm = this.value.toLowerCase();
+        const status = document.getElementById('filterStatus').value;
+        
+        let filtered = orders;
+        
+        if (searchTerm) {
+            filtered = filtered.filter(order => 
+                (order.numero && order.numero.toLowerCase().includes(searchTerm)) ||
+                (order.cliente && order.cliente.toLowerCase().includes(searchTerm))
+            );
+        }
+        
+        if (status) {
+            filtered = filtered.filter(order => order.status === status);
+        }
+        
+        displayOrders(filtered);
+    });
+    
+    document.getElementById('filterStatus').addEventListener('change', function() {
+        document.getElementById('searchOrder').dispatchEvent(new Event('keyup'));
+    });
+    
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', loadOrders);
+</script>
+{% endblock %}
