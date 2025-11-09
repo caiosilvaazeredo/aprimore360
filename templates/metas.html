@@ -1,0 +1,532 @@
+{% extends "base.html" %}
+
+{% block title %}Metas - Gestão Comercial{% endblock %}
+{% block page_title %}Metas e Performance{% endblock %}
+
+{% block extra_css %}
+<style>
+    .progress-circle {
+        width: 200px;
+        height: 200px;
+        position: relative;
+        margin: 0 auto;
+    }
+    
+    .progress-value {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 36px;
+        font-weight: bold;
+        color: var(--primary);
+    }
+    
+    .ranking-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.3s;
+    }
+    
+    .ranking-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .ranking-position {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 20px;
+    }
+    
+    .gold { background: linear-gradient(135deg, #FFD700, #FFA500); color: white; }
+    .silver { background: linear-gradient(135deg, #C0C0C0, #808080); color: white; }
+    .bronze { background: linear-gradient(135deg, #CD7F32, #8B4513); color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Period Selector -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="btn-group" role="group">
+                <button class="btn btn-outline-primary active" onclick="changePeriod('month')">Mês Atual</button>
+                <button class="btn btn-outline-primary" onclick="changePeriod('quarter')">Trimestre</button>
+                <button class="btn btn-outline-primary" onclick="changePeriod('semester')">Semestre</button>
+                <button class="btn btn-outline-primary" onclick="changePeriod('year')">Ano</button>
+            </div>
+        </div>
+        <div class="col-md-6 text-end">
+            <button class="btn btn-gradient" onclick="openGoalModal()">
+                <i class="fas fa-bullseye"></i> Definir Meta
+            </button>
+            <button class="btn btn-outline-primary" onclick="exportReport()">
+                <i class="fas fa-download"></i> Exportar Relatório
+            </button>
+        </div>
+    </div>
+    
+    <!-- Main Goal Progress -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="stat-card text-center">
+                <h5 class="mb-3">Meta do Mês</h5>
+                <div class="progress-circle">
+                    <canvas id="progressChart" width="200" height="200"></canvas>
+                    <div class="progress-value" id="progressValue">0%</div>
+                </div>
+                <div class="mt-3">
+                    <h4 class="mb-1" id="valorRealizado">R$ 0</h4>
+                    <p class="text-muted mb-0">de <strong id="valorMeta">R$ 0</strong></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="stat-card">
+                <h5 class="mb-3">Projeção</h5>
+                <div class="mb-3">
+                    <label class="small text-muted">Dias Restantes</label>
+                    <h3 class="mb-0" id="diasRestantes">0</h3>
+                </div>
+                <div class="mb-3">
+                    <label class="small text-muted">Meta Diária Necessária</label>
+                    <h3 class="mb-0 text-warning" id="metaDiaria">R$ 0</h3>
+                </div>
+                <div>
+                    <label class="small text-muted">Projeção Final</label>
+                    <h3 class="mb-0 text-success" id="projecaoFinal">R$ 0</h3>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="stat-card">
+                <h5 class="mb-3">Sua Posição</h5>
+                <div class="text-center mb-3">
+                    <div class="ranking-position gold mx-auto mb-3" id="userRanking">
+                        1°
+                    </div>
+                    <h4 id="userName">Você</h4>
+                    <p class="text-muted mb-0">Entre <span id="totalVendedores">12</span> vendedores</p>
+                </div>
+                <div class="progress" style="height: 10px;">
+                    <div class="progress-bar" id="rankingProgress" style="width: 100%; background: linear-gradient(135deg, #FFD700, #FFA500);"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Detailed Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="stat-card">
+                <h5 class="mb-3">Evolução Diária</h5>
+                <canvas id="dailyChart" height="100"></canvas>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="stat-card">
+                <h5 class="mb-3">Métricas Detalhadas</h5>
+                <table class="table table-sm">
+                    <tbody>
+                        <tr>
+                            <td>Ticket Médio</td>
+                            <td class="text-end"><strong id="ticketMedio">R$ 0</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Nº de Pedidos</td>
+                            <td class="text-end"><strong id="numeroPedidos">0</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Taxa de Conversão</td>
+                            <td class="text-end"><strong id="taxaConversao">0%</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Clientes Ativos</td>
+                            <td class="text-end"><strong id="clientesAtivos">0</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Produtos Vendidos</td>
+                            <td class="text-end"><strong id="produtosVendidos">0</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Comissão Estimada</td>
+                            <td class="text-end"><strong class="text-success" id="comissaoEstimada">R$ 0</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Ranking -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="stat-card">
+                <h5 class="mb-3">Ranking de Vendedores</h5>
+                <div id="rankingList">
+                    <!-- Ranking will be loaded here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="stat-card">
+                <h5 class="mb-3">Metas por Categoria</h5>
+                <canvas id="categoryChart" height="150"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Goal Modal -->
+<div class="modal fade" id="goalModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Definir Meta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="goalForm">
+                    <div class="mb-3">
+                        <label class="form-label">Período</label>
+                        <select class="form-select" id="periodo">
+                            <option value="month">Mês Atual</option>
+                            <option value="quarter">Trimestre</option>
+                            <option value="year">Ano</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Valor da Meta</label>
+                        <input type="number" class="form-control" id="valorMetaInput" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacoesMetaInput" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-gradient" onclick="saveGoal()">
+                    <i class="fas fa-save"></i> Salvar Meta
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let progressChart, dailyChart, categoryChart;
+    let currentPeriod = 'month';
+    
+    // Load Goals Data
+    async function loadGoals() {
+        try {
+            showLoading();
+            
+            const response = await fetch('/api/metas');
+            const data = await response.json();
+            
+            // Update main metrics
+            document.getElementById('valorRealizado').textContent = formatCurrency(data.realizado);
+            document.getElementById('valorMeta').textContent = formatCurrency(data.metaMensal);
+            document.getElementById('progressValue').textContent = `${data.percentual}%`;
+            document.getElementById('diasRestantes').textContent = data.diasRestantes;
+            document.getElementById('metaDiaria').textContent = formatCurrency(data.metaDiaria);
+            document.getElementById('projecaoFinal').textContent = formatCurrency(data.realizado + (data.metaDiaria * data.diasRestantes));
+            
+            // Update ranking
+            document.getElementById('userRanking').textContent = `${data.ranking}°`;
+            document.getElementById('totalVendedores').textContent = data.totalVendedores;
+            
+            // Update detailed metrics
+            document.getElementById('ticketMedio').textContent = formatCurrency(data.ticketMedio || 1500);
+            document.getElementById('numeroPedidos').textContent = data.numeroPedidos || 83;
+            document.getElementById('taxaConversao').textContent = `${data.taxaConversao || 68}%`;
+            document.getElementById('clientesAtivos').textContent = data.clientesAtivos || 45;
+            document.getElementById('produtosVendidos').textContent = data.produtosVendidos || 256;
+            document.getElementById('comissaoEstimada').textContent = formatCurrency(data.realizado * 0.05);
+            
+            // Update charts
+            updateProgressChart(data.percentual);
+            updateDailyChart();
+            updateCategoryChart();
+            loadRanking();
+            
+        } catch (error) {
+            console.error('Erro ao carregar metas:', error);
+        } finally {
+            hideLoading();
+        }
+    }
+    
+    // Update Progress Chart
+    function updateProgressChart(percentage) {
+        const ctx = document.getElementById('progressChart').getContext('2d');
+        
+        if (progressChart) progressChart.destroy();
+        
+        progressChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [percentage, 100 - percentage],
+                    backgroundColor: [
+                        'rgba(102, 126, 234, 0.8)',
+                        'rgba(229, 231, 235, 0.3)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: false,
+                cutout: '75%',
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: false
+                    }
+                }
+            }
+        });
+    }
+    
+    // Update Daily Chart
+    function updateDailyChart() {
+        const ctx = document.getElementById('dailyChart').getContext('2d');
+        
+        // Generate sample data for current month
+        const days = [];
+        const values = [];
+        const accumulated = [];
+        let acc = 0;
+        
+        for (let i = 1; i <= 30; i++) {
+            days.push(`Dia ${i}`);
+            const dayValue = Math.random() * 10000 + 2000;
+            values.push(dayValue);
+            acc += dayValue;
+            accumulated.push(acc);
+        }
+        
+        if (dailyChart) dailyChart.destroy();
+        
+        dailyChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: days,
+                datasets: [{
+                    label: 'Vendas Diárias',
+                    data: values,
+                    borderColor: 'rgba(102, 126, 234, 0.8)',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Acumulado',
+                    data: accumulated,
+                    borderColor: 'rgba(16, 185, 129, 0.8)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            }
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: {
+                            drawOnChartArea: false
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Update Category Chart
+    function updateCategoryChart() {
+        const ctx = document.getElementById('categoryChart').getContext('2d');
+        
+        if (categoryChart) categoryChart.destroy();
+        
+        categoryChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Vestuário', 'Acessórios', 'Calçados', 'Bolsas', 'Outros'],
+                datasets: [{
+                    label: 'Meta',
+                    data: [50000, 30000, 25000, 35000, 10000],
+                    backgroundColor: 'rgba(229, 231, 235, 0.5)',
+                    borderColor: 'rgba(229, 231, 235, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Realizado',
+                    data: [45000, 32000, 18000, 28000, 12000],
+                    backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                    borderColor: 'rgba(102, 126, 234, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Load Ranking
+    function loadRanking() {
+        const rankings = [
+            { position: 1, name: 'João Silva', value: 185000, percentage: 123 },
+            { position: 2, name: 'Maria Santos', value: 165000, percentage: 110 },
+            { position: 3, name: 'Você', value: 125000, percentage: 83, isUser: true },
+            { position: 4, name: 'Pedro Costa', value: 118000, percentage: 78 },
+            { position: 5, name: 'Ana Lima', value: 98000, percentage: 65 }
+        ];
+        
+        const container = document.getElementById('rankingList');
+        container.innerHTML = rankings.map(r => {
+            const positionClass = r.position === 1 ? 'gold' : r.position === 2 ? 'silver' : r.position === 3 ? 'bronze' : 'bg-light';
+            
+            return `
+                <div class="ranking-card ${r.isUser ? 'border-primary border-2' : ''}">
+                    <div class="d-flex align-items-center">
+                        <div class="ranking-position ${positionClass} me-3">
+                            ${r.position}°
+                        </div>
+                        <div>
+                            <strong>${r.name}</strong><br>
+                            <small class="text-muted">${formatCurrency(r.value)}</small>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <strong class="${r.percentage >= 100 ? 'text-success' : 'text-warning'}">
+                            ${r.percentage}%
+                        </strong><br>
+                        <small class="text-muted">da meta</small>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    // Change Period
+    function changePeriod(period) {
+        currentPeriod = period;
+        
+        // Update active button
+        document.querySelectorAll('.btn-group .btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        // Reload data
+        loadGoals();
+    }
+    
+    // Open Goal Modal
+    function openGoalModal() {
+        document.getElementById('goalForm').reset();
+        new bootstrap.Modal(document.getElementById('goalModal')).show();
+    }
+    
+    // Save Goal
+    async function saveGoal() {
+        const goalData = {
+            periodo: document.getElementById('periodo').value,
+            valor: parseFloat(document.getElementById('valorMetaInput').value),
+            observacoes: document.getElementById('observacoesMetaInput').value
+        };
+        
+        try {
+            showLoading();
+            
+            const response = await fetch('/api/metas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(goalData)
+            });
+            
+            if (response.ok) {
+                Swal.fire('Sucesso', 'Meta definida com sucesso!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('goalModal')).hide();
+                loadGoals();
+            } else {
+                Swal.fire('Erro', 'Erro ao salvar meta', 'error');
+            }
+            
+        } catch (error) {
+            console.error('Erro ao salvar meta:', error);
+            Swal.fire('Erro', 'Erro ao salvar meta', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+    
+    // Export Report
+    function exportReport() {
+        Swal.fire('Info', 'Exportação de relatório em desenvolvimento', 'info');
+    }
+    
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', loadGoals);
+</script>
+{% endblock %}
