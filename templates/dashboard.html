@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Gestão Comercial{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="value" id="totalVendas">R$ 0</div>
+                <div class="label">Vendas do Mês</div>
+                <div class="change positive">
+                    <i class="fas fa-arrow-up"></i> <span id="vendaChange">0%</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="value" id="totalClientes">0</div>
+                <div class="label">Clientes Ativos</div>
+                <div class="change positive">
+                    <i class="fas fa-plus"></i> <span id="clientesNovos">0</span> novos
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="value" id="compromissosHoje">0</div>
+                <div class="label">Compromissos Hoje</div>
+                <div class="mt-2">
+                    <small class="text-muted">Semana: <span id="compromissosSemana">0</span></small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white;">
+                    <i class="fas fa-bullseye"></i>
+                </div>
+                <div class="value" id="metaPercentual">0%</div>
+                <div class="label">Meta Atingida</div>
+                <div class="progress mt-2" style="height: 6px;">
+                    <div class="progress-bar" id="metaProgress" style="width: 0%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Vendas Chart -->
+        <div class="col-md-8 mb-3">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Vendas dos Últimos 30 Dias</h5>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary active" onclick="updateChart('daily')">Diário</button>
+                        <button class="btn btn-outline-primary" onclick="updateChart('weekly')">Semanal</button>
+                        <button class="btn btn-outline-primary" onclick="updateChart('monthly')">Mensal</button>
+                    </div>
+                </div>
+                <canvas id="salesChart" height="100"></canvas>
+            </div>
+        </div>
+        
+        <!-- Top Produtos -->
+        <div class="col-md-4 mb-3">
+            <div class="stat-card">
+                <h5 class="mb-3">Produtos Mais Vendidos</h5>
+                <div id="topProducts">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <strong>Produto A</strong><br>
+                            <small class="text-muted">150 unidades</small>
+                        </div>
+                        <span class="badge bg-success">R$ 15.000</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tables Row -->
+    <div class="row">
+        <!-- Próximos Compromissos -->
+        <div class="col-md-6 mb-3">
+            <div class="custom-table">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Próximos Compromissos</h5>
+                    <a href="{{ url_for('agenda_page') }}" class="btn btn-sm btn-gradient">
+                        <i class="fas fa-plus"></i> Novo
+                    </a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Data/Hora</th>
+                                <th>Cliente</th>
+                                <th>Tipo</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="compromissosTable">
+                            <tr>
+                                <td colspan="4" class="text-center">Carregando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Últimas Vendas -->
+        <div class="col-md-6 mb-3">
+            <div class="custom-table">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Últimas Vendas</h5>
+                    <a href="{{ url_for('pedidos_page') }}" class="btn btn-sm btn-gradient">
+                        <i class="fas fa-shopping-cart"></i> Nova Venda
+                    </a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Cliente</th>
+                                <th>Valor</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vendasTable">
+                            <tr>
+                                <td colspan="4" class="text-center">Carregando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let salesChart;
+    
+    // Load Dashboard Data
+    async function loadDashboard() {
+        try {
+            showLoading();
+            
+            // Load stats
+            const response = await fetch('/api/dashboard/stats');
+            const data = await response.json();
+            
+            // Update stats cards
+            document.getElementById('totalVendas').textContent = formatCurrency(data.vendas.mes);
+            document.getElementById('vendaChange').textContent = `${data.vendas.crescimento}%`;
+            document.getElementById('totalClientes').textContent = data.clientes.ativos;
+            document.getElementById('clientesNovos').textContent = data.clientes.novos;
+            document.getElementById('compromissosHoje').textContent = data.compromissos.hoje;
+            document.getElementById('compromissosSemana').textContent = data.compromissos.semana;
+            document.getElementById('metaPercentual').textContent = `${data.vendas.percentual.toFixed(1)}%`;
+            document.getElementById('metaProgress').style.width = `${data.vendas.percentual}%`;
+            
+            // Load compromissos
+            loadCompromissos();
+            
+            // Load vendas
+            loadVendas();
+            
+            // Initialize chart
+            initSalesChart();
+            
+        } catch (error) {
+            console.error('Erro ao carregar dashboard:', error);
+        } finally {
+            hideLoading();
+        }
+    }
+    
+    // Load Compromissos
+    async function loadCompromissos() {
+        try {
+            const response = await fetch('/api/compromissos?limit=5');
+            const compromissos = await response.json();
+            
+            const tbody = document.getElementById('compromissosTable');
+            
+            if (compromissos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">Nenhum compromisso agendado</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = compromissos.map(c => `
+                <tr>
+                    <td>
+                        <strong>${formatDate(c.data)}</strong><br>
+                        <small>${c.hora}</small>
+                    </td>
+                    <td>${c.cliente || 'N/A'}</td>
+                    <td>
+                        <span class="badge bg-info">${c.tipo}</span>
+                    </td>
+                    <td>
+                        <span class="badge-status badge-${c.status === 'concluido' ? 'active' : 'pending'}">
+                            ${c.status === 'concluido' ? 'Concluído' : 'Pendente'}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+            
+        } catch (error) {
+            console.error('Erro ao carregar compromissos:', error);
+        }
+    }
+    
+    // Load Vendas
+    async function loadVendas() {
+        try {
+            const response = await fetch('/api/pedidos?limit=5');
+            const vendas = await response.json();
+            
+            const tbody = document.getElementById('vendasTable');
+            
+            if (vendas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">Nenhuma venda realizada</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = vendas.map(v => `
+                <tr>
+                    <td>${formatDate(v.data)}</td>
+                    <td>${v.cliente || 'N/A'}</td>
+                    <td><strong>${formatCurrency(v.valorTotal)}</strong></td>
+                    <td>
+                        <span class="badge-status badge-${v.status === 'aprovado' ? 'active' : v.status === 'cancelado' ? 'inactive' : 'pending'}">
+                            ${v.status === 'aprovado' ? 'Aprovado' : v.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+            
+        } catch (error) {
+            console.error('Erro ao carregar vendas:', error);
+        }
+    }
+    
+    // Initialize Sales Chart
+    function initSalesChart() {
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        
+        // Generate sample data for last 30 days
+        const labels = [];
+        const data = [];
+        
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            labels.push(date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
+            data.push(Math.floor(Math.random() * 10000) + 2000);
+        }
+        
+        salesChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Vendas (R$)',
+                    data: data,
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#667eea',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Vendas: ' + formatCurrency(context.parsed.y);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Update Chart
+    function updateChart(period) {
+        // Update chart based on period
+        // This would fetch new data and update the chart
+        console.log('Updating chart for period:', period);
+    }
+    
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', loadDashboard);
+    
+    // Refresh every 5 minutes
+    setInterval(loadDashboard, 300000);
+</script>
+{% endblock %}
