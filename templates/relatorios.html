@@ -1,0 +1,476 @@
+{% extends "base.html" %}
+
+{% block title %}Relatórios - Gestão Comercial{% endblock %}
+{% block page_title %}Relatórios e Análises{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Report Type Selector -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="stat-card">
+                <h5 class="mb-3">Selecione o Tipo de Relatório</h5>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <div class="card report-card" onclick="selectReport('vendas')">
+                            <div class="card-body text-center">
+                                <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                                <h6>Relatório de Vendas</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card report-card" onclick="selectReport('clientes')">
+                            <div class="card-body text-center">
+                                <i class="fas fa-users fa-3x text-success mb-3"></i>
+                                <h6>Relatório de Clientes</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card report-card" onclick="selectReport('produtos')">
+                            <div class="card-body text-center">
+                                <i class="fas fa-box fa-3x text-warning mb-3"></i>
+                                <h6>Relatório de Produtos</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card report-card" onclick="selectReport('comissoes')">
+                            <div class="card-body text-center">
+                                <i class="fas fa-hand-holding-usd fa-3x text-info mb-3"></i>
+                                <h6>Relatório de Comissões</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Report Filters -->
+    <div class="row mb-4" id="reportFilters" style="display: none;">
+        <div class="col-md-12">
+            <div class="stat-card">
+                <h5 class="mb-3">Filtros do Relatório</h5>
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-label">Data Inicial</label>
+                        <input type="date" class="form-control" id="dataInicio">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Data Final</label>
+                        <input type="date" class="form-control" id="dataFim">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Cliente</label>
+                        <select class="form-select" id="filterCliente">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button class="btn btn-gradient w-100" onclick="generateReport()">
+                            <i class="fas fa-play"></i> Gerar Relatório
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Report Results -->
+    <div id="reportResults" style="display: none;">
+        <!-- Charts Row -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="stat-card">
+                    <h5 class="mb-3" id="chartTitle">Gráfico</h5>
+                    <canvas id="reportChart" height="100"></canvas>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <h5 class="mb-3">Resumo</h5>
+                    <div id="reportSummary">
+                        <!-- Summary will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Data Table -->
+        <div class="custom-table">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Dados Detalhados</h5>
+                <div>
+                    <button class="btn btn-outline-primary" onclick="exportReport('excel')">
+                        <i class="fas fa-file-excel"></i> Excel
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="exportReport('pdf')">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="printReport()">
+                        <i class="fas fa-print"></i> Imprimir
+                    </button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table" id="reportTable">
+                    <thead id="reportTableHead">
+                        <!-- Headers will be loaded here -->
+                    </thead>
+                    <tbody id="reportTableBody">
+                        <!-- Data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.report-card {
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+}
+
+.report-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-color: var(--primary);
+}
+
+.report-card.selected {
+    border-color: var(--primary);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+}
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let reportChart;
+    let currentReportType = '';
+    let reportData = [];
+    
+    // Select Report Type
+    function selectReport(type) {
+        currentReportType = type;
+        
+        // Update UI
+        document.querySelectorAll('.report-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        event.currentTarget.classList.add('selected');
+        
+        // Show filters
+        document.getElementById('reportFilters').style.display = 'block';
+        document.getElementById('reportResults').style.display = 'none';
+        
+        // Set default dates
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        
+        document.getElementById('dataInicio').value = firstDay.toISOString().split('T')[0];
+        document.getElementById('dataFim').value = today.toISOString().split('T')[0];
+        
+        // Load clients for filter
+        loadClients();
+    }
+    
+    // Load Clients for Filter
+    async function loadClients() {
+        try {
+            const response = await fetch('/api/clientes');
+            const clients = await response.json();
+            
+            const select = document.getElementById('filterCliente');
+            select.innerHTML = '<option value="">Todos os Clientes</option>' + 
+                clients.map(c => `<option value="${c.id}">${c.fantasia}</option>`).join('');
+            
+        } catch (error) {
+            console.error('Erro ao carregar clientes:', error);
+        }
+    }
+    
+    // Generate Report
+    async function generateReport() {
+        const dataInicio = document.getElementById('dataInicio').value;
+        const dataFim = document.getElementById('dataFim').value;
+        const clienteId = document.getElementById('filterCliente').value;
+        
+        if (!dataInicio || !dataFim) {
+            Swal.fire('Atenção', 'Selecione o período do relatório', 'warning');
+            return;
+        }
+        
+        try {
+            showLoading();
+            
+            const params = new URLSearchParams({
+                tipo: currentReportType,
+                dataInicio: dataInicio,
+                dataFim: dataFim
+            });
+            
+            if (clienteId) params.append('clienteId', clienteId);
+            
+            const response = await fetch(`/api/relatorios/vendas?${params}`);
+            reportData = await response.json();
+            
+            // Show results
+            document.getElementById('reportResults').style.display = 'block';
+            
+            // Update based on report type
+            switch(currentReportType) {
+                case 'vendas':
+                    generateSalesReport();
+                    break;
+                case 'clientes':
+                    generateClientsReport();
+                    break;
+                case 'produtos':
+                    generateProductsReport();
+                    break;
+                case 'comissoes':
+                    generateCommissionsReport();
+                    break;
+            }
+            
+        } catch (error) {
+            console.error('Erro ao gerar relatório:', error);
+            Swal.fire('Erro', 'Erro ao gerar relatório', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+    
+    // Generate Sales Report
+    function generateSalesReport() {
+        document.getElementById('chartTitle').textContent = 'Evolução de Vendas';
+        
+        // Sample data
+        const labels = [];
+        const values = [];
+        
+        for (let i = 1; i <= 30; i++) {
+            labels.push(`Dia ${i}`);
+            values.push(Math.random() * 10000 + 2000);
+        }
+        
+        // Update chart
+        const ctx = document.getElementById('reportChart').getContext('2d');
+        
+        if (reportChart) reportChart.destroy();
+        
+        reportChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Vendas',
+                    data: values,
+                    borderColor: 'rgba(102, 126, 234, 0.8)',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Update summary
+        const total = values.reduce((sum, v) => sum + v, 0);
+        const average = total / values.length;
+        
+        document.getElementById('reportSummary').innerHTML = `
+            <div class="mb-3">
+                <label class="small text-muted">Total de Vendas</label>
+                <h4 class="mb-0">${formatCurrency(total)}</h4>
+            </div>
+            <div class="mb-3">
+                <label class="small text-muted">Média Diária</label>
+                <h4 class="mb-0">${formatCurrency(average)}</h4>
+            </div>
+            <div class="mb-3">
+                <label class="small text-muted">Número de Pedidos</label>
+                <h4 class="mb-0">127</h4>
+            </div>
+            <div>
+                <label class="small text-muted">Ticket Médio</label>
+                <h4 class="mb-0">${formatCurrency(total / 127)}</h4>
+            </div>
+        `;
+        
+        // Update table
+        document.getElementById('reportTableHead').innerHTML = `
+            <tr>
+                <th>Data</th>
+                <th>Nº Pedido</th>
+                <th>Cliente</th>
+                <th>Valor</th>
+                <th>Status</th>
+            </tr>
+        `;
+        
+        // Sample table data
+        const tableData = [];
+        for (let i = 1; i <= 10; i++) {
+            tableData.push({
+                data: new Date(2025, 0, i).toLocaleDateString('pt-BR'),
+                numero: `PED-2025${i.toString().padStart(4, '0')}`,
+                cliente: `Cliente ${i}`,
+                valor: formatCurrency(Math.random() * 5000 + 1000),
+                status: 'Faturado'
+            });
+        }
+        
+        document.getElementById('reportTableBody').innerHTML = tableData.map(row => `
+            <tr>
+                <td>${row.data}</td>
+                <td>${row.numero}</td>
+                <td>${row.cliente}</td>
+                <td><strong>${row.valor}</strong></td>
+                <td><span class="badge bg-success">${row.status}</span></td>
+            </tr>
+        `).join('');
+    }
+    
+    // Generate Clients Report
+    function generateClientsReport() {
+        document.getElementById('chartTitle').textContent = 'Clientes por Status';
+        
+        // Update chart
+        const ctx = document.getElementById('reportChart').getContext('2d');
+        
+        if (reportChart) reportChart.destroy();
+        
+        reportChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Ativos', 'Pendentes', 'Inativos'],
+                datasets: [{
+                    data: [65, 20, 15],
+                    backgroundColor: [
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(245, 158, 11, 0.8)',
+                        'rgba(239, 68, 68, 0.8)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+        
+        // Update summary
+        document.getElementById('reportSummary').innerHTML = `
+            <div class="mb-3">
+                <label class="small text-muted">Total de Clientes</label>
+                <h4 class="mb-0">100</h4>
+            </div>
+            <div class="mb-3">
+                <label class="small text-muted">Novos no Período</label>
+                <h4 class="mb-0">15</h4>
+            </div>
+            <div class="mb-3">
+                <label class="small text-muted">Taxa de Retenção</label>
+                <h4 class="mb-0">85%</h4>
+            </div>
+        `;
+    }
+    
+    // Generate Products Report
+    function generateProductsReport() {
+        document.getElementById('chartTitle').textContent = 'Top 10 Produtos';
+        
+        // Update chart
+        const ctx = document.getElementById('reportChart').getContext('2d');
+        
+        if (reportChart) reportChart.destroy();
+        
+        reportChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Produto A', 'Produto B', 'Produto C', 'Produto D', 'Produto E'],
+                datasets: [{
+                    label: 'Quantidade Vendida',
+                    data: [150, 120, 100, 85, 70],
+                    backgroundColor: 'rgba(102, 126, 234, 0.8)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    
+    // Generate Commissions Report
+    function generateCommissionsReport() {
+        document.getElementById('chartTitle').textContent = 'Comissões do Período';
+        
+        // Similar implementation to sales report
+        generateSalesReport();
+        
+        // Update summary for commissions
+        document.getElementById('reportSummary').innerHTML = `
+            <div class="mb-3">
+                <label class="small text-muted">Total de Comissões</label>
+                <h4 class="mb-0 text-success">${formatCurrency(6250)}</h4>
+            </div>
+            <div class="mb-3">
+                <label class="small text-muted">Percentual Médio</label>
+                <h4 class="mb-0">5%</h4>
+            </div>
+        `;
+    }
+    
+    // Export Report
+    function exportReport(format) {
+        Swal.fire('Info', `Exportação para ${format.toUpperCase()} em desenvolvimento`, 'info');
+    }
+    
+    // Print Report
+    function printReport() {
+        window.print();
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set default dates
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        
+        document.getElementById('dataInicio').value = firstDay.toISOString().split('T')[0];
+        document.getElementById('dataFim').value = today.toISOString().split('T')[0];
+    });
+</script>
+{% endblock %}
