@@ -2,3 +2,14 @@ Flask==3.0.0
 firebase-admin==6.3.0
 python-dotenv==1.0.0
 gunicorn==21.2.0
+flask-cors==4.0.0
+flask-login==0.6.3
+werkzeug==3.0.1
+requests==2.31.0
+geopy==2.4.1
+pandas==2.1.4
+numpy==1.26.2
+flask-mail==0.9.1
+bcrypt==4.1.2
+flask-jwt-extended==4.6.0
+folium==0.15.1
