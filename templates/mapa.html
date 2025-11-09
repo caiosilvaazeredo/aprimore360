@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}Mapa - Gestão Comercial{% endblock %}
+{% block page_title %}Mapa de Clientes{% endblock %}
+
+{% block extra_css %}
+<style>
+    #map {
+        height: 600px;
+        width: 100%;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .map-controls {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .route-info {
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 20px;
+    }
+    
+    .client-marker {
+        background: white;
+        border: 2px solid #667eea;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #667eea;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Map Controls -->
+    <div class="map-controls">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control" placeholder="Buscar endereço..." id="searchAddress">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select class="form-select" id="filterStatus">
+                    <option value="">Todos os clientes</option>
+                    <option value="ativo">Clientes Ativos</option>
+                    <option value="pendente">Visitas Pendentes</option>
+                    <option value="visitado">Visitados Hoje</option>
+                </select>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-gradient" onclick="optimizeRoute()">
+                    <i class="fas fa-route"></i> Otimizar Rota
+                </button>
+                <button class="btn btn-outline-primary" onclick="centerMap()">
+                    <i class="fas fa-crosshairs"></i> Minha Localização
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Map Container -->
+    <div id="map"></div>
+    
+    <!-- Route Information -->
+    <div class="route-info" id="routeInfo" style="display: none;">
+        <h5 class="mb-3">Rota Otimizada</h5>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-primary">0 km</h4>
+                    <small class="text-muted">Distância Total</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-success">0 min</h4>
+                    <small class="text-muted">Tempo Estimado</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h4 class="text-warning">0</h4>
+                    <small class="text-muted">Clientes na Rota</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <button class="btn btn-gradient btn-sm" onclick="startNavigation()">
+                        <i class="fas fa-play"></i> Iniciar Navegação
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-3">
+            <h6>Sequência de Visitas:</h6>
+            <ol id="routeSequence" class="mb-0">
+                <!-- Route sequence will be added here -->
+            </ol>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let map;
+    let markers = [];
+    let userLocation = [-23.5505, -46.6333]; // São Paulo default
+    let clients = [];
+    
+    // Initialize Map
+    function initMap() {
+        map = L.map('map').setView(userLocation, 13);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        // Add user location marker
+        L.marker(userLocation, {
+            icon: L.divIcon({
+                className: 'user-marker',
+                html: '<i class="fas fa-user-circle" style="font-size: 24px; color: #667eea;"></i>'
+            })
+        }).addTo(map);
+        
+        // Load clients
+        loadMapClients();
+        
+        // Get user's actual location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                userLocation = [position.coords.latitude, position.coords.longitude];
+                map.setView(userLocation, 13);
+            });
+        }
+    }
+    
+    // Load Clients on Map
+    async function loadMapClients() {
+        try {
+            const response = await fetch('/api/mapa/clientes');
+            clients = await response.json();
+            
+            // Clear existing markers
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            
+            // Add client markers
+            clients.forEach((client, index) => {
+                if (client.latitude && client.longitude) {
+                    const marker = L.marker([client.latitude, client.longitude], {
+                        icon: L.divIcon({
+                            className: 'client-marker',
+                            html: `<div class="client-marker">${index + 1}</div>`
+                        })
+                    }).addTo(map);
+                    
+                    marker.bindPopup(`
+                        <div style="min-width: 200px;">
+                            <h6>${client.nome}</h6>
+                            <p class="mb-1">${client.endereco}</p>
+                            <small class="text-muted">Status: ${client.status}</small><br>
+                            <div class="mt-2">
+                                <button class="btn btn-sm btn-primary" onclick="viewClient('${client.id}')">
+                                    <i class="fas fa-eye"></i> Ver Detalhes
+                                </button>
+                                <button class="btn btn-sm btn-success" onclick="startRoute('${client.id}')">
+                                    <i class="fas fa-directions"></i> Ir
+                                </button>
+                            </div>
+                        </div>
+                    `);
+                    
+                    markers.push(marker);
+                }
+            });
+            
+            // Fit map to show all markers
+            if (markers.length > 0) {
+                const group = new L.featureGroup(markers);
+                map.fitBounds(group.getBounds());
+            }
+            
+        } catch (error) {
+            console.error('Erro ao carregar clientes no mapa:', error);
+        }
+    }
+    
+    // Optimize Route
+    async function optimizeRoute() {
+        try {
+            showLoading();
+            
+            const clientIds = clients.map(c => c.id);
+            
+            const response = await fetch('/api/mapa/otimizar-rota', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ clienteIds: clientIds })
+            });
+            
+            const data = await response.json();
+            
+            // Show route info
+            document.getElementById('routeInfo').style.display = 'block';
+            
+            // Update route statistics
+            document.querySelector('.route-info h4.text-primary').textContent = `${data.distanciaTotal} km`;
+            document.querySelector('.route-info h4.text-success').textContent = `${data.tempoEstimado} min`;
+            document.querySelector('.route-info h4.text-warning').textContent = clients.length;
+            
+            // Update route sequence
+            const sequenceList = document.getElementById('routeSequence');
+            sequenceList.innerHTML = clients.map((client, index) => `
+                <li>${client.nome} - ${client.endereco}</li>
+            `).join('');
+            
+            // Draw route on map (simplified - in production use a routing service)
+            if (markers.length > 1) {
+                const latlngs = markers.map(m => m.getLatLng());
+                L.polyline(latlngs, {color: '#667eea', weight: 4, opacity: 0.7}).addTo(map);
+            }
+            
+            Swal.fire('Sucesso', 'Rota otimizada com sucesso!', 'success');
+            
+        } catch (error) {
+            console.error('Erro ao otimizar rota:', error);
+            Swal.fire('Erro', 'Erro ao otimizar rota', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+    
+    // Center Map on User Location
+    function centerMap() {
+        map.setView(userLocation, 15);
+    }
+    
+    // Start Navigation
+    function startNavigation() {
+        // Open in Google Maps or Waze
+        const destination = clients[0]; // First client in route
+        if (destination) {
+            const url = `https://www.google.com/maps/dir/?api=1&destination=${destination.latitude},${destination.longitude}`;
+            window.open(url, '_blank');
+        }
+    }
+    
+    // View Client
+    function viewClient(clientId) {
+        window.location.href = `/clientes/${clientId}`;
+    }
+    
+    // Start Route to Specific Client
+    function startRoute(clientId) {
+        const client = clients.find(c => c.id === clientId);
+        if (client) {
+            const url = `https://www.google.com/maps/dir/?api=1&destination=${client.latitude},${client.longitude}`;
+            window.open(url, '_blank');
+        }
+    }
+    
+    // Filter clients
+    document.getElementById('filterStatus').addEventListener('change', function() {
+        // Implement filter logic
+        loadMapClients();
+    });
+    
+    // Search address
+    document.getElementById('searchAddress').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            // Implement geocoding search
+            const address = this.value;
+            // Use a geocoding service to search
+        }
+    });
+    
+    // Initialize map on load
+    document.addEventListener('DOMContentLoaded', initMap);
+</script>
+{% endblock %}
