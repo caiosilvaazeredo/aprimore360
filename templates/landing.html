@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aprimore360 - Sistema de Gestão Comercial</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --dark: #1e293b;
+        }
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            overflow-x: hidden;
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="rgba(255,255,255,0.1)" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,133.3C672,139,768,181,864,181.3C960,181,1056,139,1152,117.3C1248,96,1344,96,1392,96L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>');
+            background-size: cover;
+            background-position: bottom;
+        }
+        
+        .navbar {
+            background: transparent !important;
+            transition: all 0.3s ease;
+        }
+        
+        .navbar.scrolled {
+            background: rgba(255, 255, 255, 0.95) !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .navbar.scrolled .nav-link,
+        .navbar.scrolled .navbar-brand {
+            color: var(--dark) !important;
+        }
+        
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.8rem;
+            color: white !important;
+        }
+        
+        .nav-link {
+            color: rgba(255,255,255,0.9) !important;
+            font-weight: 500;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            color: white !important;
+            transform: translateY(-2px);
+        }
+        
+        .btn-hero {
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-hero-primary {
+            background: white;
+            color: var(--primary);
+            border: none;
+        }
+        
+        .btn-hero-primary:hover {
+            background: #f0f0f0;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .btn-hero-outline {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+        
+        .btn-hero-outline:hover {
+            background: white;
+            color: var(--primary);
+        }
+        
+        .hero-content {
+            padding-top: 150px;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: white;
+            line-height: 1.2;
+            margin-bottom: 25px;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.3rem;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 40px;
+            font-weight: 400;
+        }
+        
+        .hero-image {
+            position: relative;
+            z-index: 10;
+        }
+        
+        .hero-image img {
+            max-width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+        }
+        
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+        
+        @keyframes floating {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        /* Features Section */
+        .features {
+            padding: 100px 0;
+            background: #f8fafc;
+        }
+        
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 20px;
+        }
+        
+        .section-subtitle {
+            font-size: 1.1rem;
+            color: #64748b;
+            margin-bottom: 60px;
+        }
+        
+        .feature-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+            height: 100%;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.15);
+            border-color: var(--primary);
+        }
+        
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 25px;
+            font-size: 2rem;
+            color: white;
+        }
+        
+        .feature-card h4 {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 15px;
+        }
+        
+        .feature-card p {
+            color: #64748b;
+            line-height: 1.7;
+        }
+        
+        /* Benefits Section */
+        .benefits {
+            padding: 100px 0;
+            background: white;
+        }
+        
+        .benefit-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+        
+        .benefit-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+        
+        .benefit-icon i {
+            color: var(--primary);
+            font-size: 1.3rem;
+        }
+        
+        .benefit-content h5 {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+        
+        .benefit-content p {
+            color: #64748b;
+            margin: 0;
+        }
+        
+        .benefits-image {
+            position: relative;
+        }
+        
+        .benefits-image img {
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .stats-badge {
+            position: absolute;
+            background: white;
+            padding: 20px 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            bottom: -30px;
+            right: 30px;
+        }
+        
+        .stats-badge h3 {
+            color: var(--primary);
+            font-weight: 700;
+            margin: 0;
+            font-size: 2rem;
+        }
+        
+        .stats-badge p {
+            color: #64748b;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        
+        /* Pricing Section */
+        .pricing {
+            padding: 100px 0;
+            background: #f8fafc;
+        }
+        
+        .pricing-card {
+            background: white;
+            border-radius: 25px;
+            padding: 45px 35px;
+            text-align: center;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .pricing-card.popular {
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+        
+        .pricing-card.popular::before {
+            content: 'MAIS POPULAR';
+            position: absolute;
+            top: 20px;
+            right: -35px;
+            background: var(--primary);
+            color: white;
+            padding: 5px 40px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transform: rotate(45deg);
+        }
+        
+        .pricing-card:hover {
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.15);
+        }
+        
+        .pricing-card h4 {
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 15px;
+        }
+        
+        .pricing-price {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        
+        .pricing-price small {
+            font-size: 1rem;
+            color: #64748b;
+            font-weight: 400;
+        }
+        
+        .pricing-description {
+            color: #64748b;
+            margin-bottom: 30px;
+        }
+        
+        .pricing-features {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+        
+        .pricing-features li {
+            padding: 10px 0;
+            color: #475569;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .pricing-features li:last-child {
+            border-bottom: none;
+        }
+        
+        .pricing-features i {
+            color: var(--success);
+            margin-right: 10px;
+        }
+        
+        .btn-pricing {
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-pricing-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border: none;
+        }
+        
+        .btn-pricing-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        .btn-pricing-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+        
+        .btn-pricing-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* Testimonials */
+        .testimonials {
+            padding: 100px 0;
+            background: white;
+        }
+        
+        .testimonial-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 35px;
+            position: relative;
+        }
+        
+        .testimonial-card::before {
+            content: '"';
+            font-size: 6rem;
+            color: var(--primary);
+            opacity: 0.2;
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            font-family: serif;
+            line-height: 1;
+        }
+        
+        .testimonial-text {
+            font-size: 1.1rem;
+            color: #475569;
+            line-height: 1.8;
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+        }
+        
+        .testimonial-author img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+        
+        .testimonial-author h6 {
+            font-weight: 600;
+            color: var(--dark);
+            margin: 0;
+        }
+        
+        .testimonial-author p {
+            color: #64748b;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        
+        /* CTA Section */
+        .cta {
+            padding: 100px 0;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            position: relative;
+        }
+        
+        .cta-content {
+            position: relative;
+            z-index: 10;
+        }
+        
+        .cta h2 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 20px;
+        }
+        
+        .cta p {
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 40px;
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--dark);
+            padding: 60px 0 30px;
+        }
+        
+        .footer-brand {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 20px;
+        }
+        
+        .footer-description {
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 25px;
+        }
+        
+        .footer h5 {
+            color: white;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+        
+        .footer-links a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .footer-links a:hover {
+            color: white;
+            padding-left: 5px;
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .social-links a {
+            width: 45px;
+            height: 45px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .social-links a:hover {
+            background: var(--primary);
+            transform: translateY(-3px);
+        }
+        
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 30px;
+            margin-top: 40px;
+        }
+        
+        .footer-bottom p {
+            color: rgba(255,255,255,0.7);
+            margin: 0;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+            
+            .hero-content {
+                padding-top: 120px;
+                text-align: center;
+            }
+            
+            .pricing-card.popular {
+                transform: scale(1);
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-chart-line me-2"></i>Aprimore360
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features">Funcionalidades</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#benefits">Benefícios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#pricing">Preços</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#testimonials">Depoimentos</a>
+                    </li>
+                </ul>
+                <div class="ms-lg-4">
+                    <a href="/login" class="btn btn-hero-outline btn-sm me-2">Entrar</a>
+                    <a href="/cadastro" class="btn btn-hero-primary btn-sm">Começar Grátis</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 hero-content">
+                    <h1 class="hero-title">
+                        Transforme suas vendas com inteligência comercial
+                    </h1>
+                    <p class="hero-subtitle">
+                        Gerencie clientes, otimize rotas, acompanhe metas e aumente sua produtividade em até 40% com nossa plataforma completa de gestão comercial.
+                    </p>
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="/cadastro" class="btn btn-hero btn-hero-primary">
+                            <i class="fas fa-rocket me-2"></i>Teste Grátis 14 Dias
+                        </a>
+                        <a href="#demo" class="btn btn-hero btn-hero-outline">
+                            <i class="fas fa-play me-2"></i>Ver Demonstração
+                        </a>
+                    </div>
+                    <div class="mt-4">
+                        <small class="text-white-50">
+                            <i class="fas fa-check me-2"></i>Sem cartão de crédito
+                            <i class="fas fa-check ms-3 me-2"></i>Cancele quando quiser
+                        </small>
+                    </div>
+                </div>
+                <div class="col-lg-6 hero-image d-none d-lg-block">
+                    <div class="floating">
+                        <img src="https://via.placeholder.com/600x400/667eea/ffffff?text=Dashboard+Preview" alt="Dashboard" class="img-fluid">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="text-center">
+                <h2 class="section-title">Tudo que você precisa em um só lugar</h2>
+                <p class="section-subtitle">
+                    Funcionalidades poderosas para impulsionar suas vendas
+                </p>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h4>Gestão de Clientes</h4>
+                        <p>Cadastro completo com histórico de compras, preferências e geolocalização automática para melhor atendimento.</p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-map-marked-alt"></i>
+                        </div>
+                        <h4>Roteirização Inteligente</h4>
+                        <p>Otimize suas visitas com rotas inteligentes que economizam tempo e combustível, aumentando sua produtividade.</p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <h4>Metas & Performance</h4>
+                        <p>Acompanhe suas metas em tempo real, visualize seu desempenho e identifique oportunidades de melhoria.</p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <h4>Agenda Inteligente</h4>
+                        <p>Organize compromissos, receba lembretes automáticos e nunca mais perca uma visita importante.</p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <h4>Pedidos & Comissões</h4>
+                        <p>Registre pedidos, calcule comissões automaticamente e acompanhe todo o fluxo de vendas.</p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <h4>Relatórios Completos</h4>
+                        <p>Dashboards interativos com métricas de vendas, clientes, produtos e comissões para decisões estratégicas.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Benefits Section -->
+    <section class="benefits" id="benefits">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 mb-5 mb-lg-0">
+                    <h2 class="section-title">Por que escolher o Aprimore360?</h2>
+                    <p class="text-muted mb-4">
+                        Desenvolvido por vendedores para vendedores. Entendemos suas necessidades e criamos a ferramenta perfeita.
+                    </p>
+                    
+                    <div class="benefit-item">
+                        <div class="benefit-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div class="benefit-content">
+                            <h5>Aumento de 40% na Produtividade</h5>
+                            <p>Automatize tarefas repetitivas e foque no que realmente importa: vender.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="benefit-item">
+                        <div class="benefit-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="benefit-content">
+                            <h5>Dados Seguros na Nuvem</h5>
+                            <p>Seus dados protegidos com criptografia de ponta e backup automático diário.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="benefit-item">
+                        <div class="benefit-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div class="benefit-content">
+                            <h5>Acesso de Qualquer Lugar</h5>
+                            <p>Responsivo e otimizado para desktop, tablet e smartphone.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="benefit-item">
+                        <div class="benefit-icon">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <div class="benefit-content">
+                            <h5>Suporte Dedicado</h5>
+                            <p>Equipe especializada pronta para ajudar você a ter sucesso.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6">
+                    <div class="benefits-image">
+                        <img src="https://via.placeholder.com/500x400/f8fafc/667eea?text=Métricas+%26+Gráficos" alt="Benefits" class="img-fluid">
+                        <div class="stats-badge">
+                            <h3>+2.500</h3>
+                            <p>Vendedores satisfeitos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Pricing Section -->
+    <section class="pricing" id="pricing">
+        <div class="container">
+            <div class="text-center">
+                <h2 class="section-title">Planos que cabem no seu bolso</h2>
+                <p class="section-subtitle">
+                    Escolha o plano ideal para o seu negócio. Todos incluem suporte e atualizações.
+                </p>
+            </div>
+            
+            <div class="row justify-content-center g-4">
+                <div class="col-lg-4">
+                    <div class="pricing-card">
+                        <h4>Starter</h4>
+                        <div class="pricing-price">
+                            R$ 49<small>/mês</small>
+                        </div>
+                        <p class="pricing-description">Ideal para vendedores autônomos</p>
+                        <ul class="pricing-features">
+                            <li><i class="fas fa-check"></i> Até 50 clientes</li>
+                            <li><i class="fas fa-check"></i> Agenda completa</li>
+                            <li><i class="fas fa-check"></i> Relatórios básicos</li>
+                            <li><i class="fas fa-check"></i> Suporte por email</li>
+                            <li><i class="fas fa-check"></i> 1 usuário</li>
+                        </ul>
+                        <a href="/cadastro" class="btn btn-pricing btn-pricing-outline">
+                            Começar Grátis
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="pricing-card popular">
+                        <h4>Professional</h4>
+                        <div class="pricing-price">
+                            R$ 99<small>/mês</small>
+                        </div>
+                        <p class="pricing-description">Para equipes em crescimento</p>
+                        <ul class="pricing-features">
+                            <li><i class="fas fa-check"></i> Clientes ilimitados</li>
+                            <li><i class="fas fa-check"></i> Roteirização inteligente</li>
+                            <li><i class="fas fa-check"></i> Relatórios avançados</li>
+                            <li><i class="fas fa-check"></i> Suporte prioritário</li>
+                            <li><i class="fas fa-check"></i> Até 5 usuários</li>
+                            <li><i class="fas fa-check"></i> Gestão de metas</li>
+                        </ul>
+                        <a href="/cadastro" class="btn btn-pricing btn-pricing-primary">
+                            Começar Grátis
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="pricing-card">
+                        <h4>Enterprise</h4>
+                        <div class="pricing-price">
+                            R$ 249<small>/mês</small>
+                        </div>
+                        <p class="pricing-description">Para grandes empresas</p>
+                        <ul class="pricing-features">
+                            <li><i class="fas fa-check"></i> Tudo do Professional</li>
+                            <li><i class="fas fa-check"></i> Usuários ilimitados</li>
+                            <li><i class="fas fa-check"></i> API personalizada</li>
+                            <li><i class="fas fa-check"></i> Suporte 24/7</li>
+                            <li><i class="fas fa-check"></i> Gerente dedicado</li>
+                            <li><i class="fas fa-check"></i> Treinamento da equipe</li>
+                        </ul>
+                        <a href="/cadastro" class="btn btn-pricing btn-pricing-outline">
+                            Falar com Vendas
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Testimonials -->
+    <section class="testimonials" id="testimonials">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="section-title">O que dizem nossos clientes</h2>
+                <p class="section-subtitle">
+                    Histórias reais de quem transformou suas vendas
+                </p>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="testimonial-card">
+                        <p class="testimonial-text">
+                            "Depois de implementar o Aprimore360, aumentei minhas vendas em 35% no primeiro trimestre. A roteirização inteligente me economiza 2 horas por dia!"
+                        </p>
+                        <div class="testimonial-author">
+                            <img src="https://via.placeholder.com/60/667eea/ffffff?text=RS" alt="Roberto">
+                            <div>
+                                <h6>Roberto Silva</h6>
+                                <p>Representante Comercial</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="testimonial-card">
+                        <p class="testimonial-text">
+                            "Finalmente tenho controle total da minha carteira de clientes. Os relatórios me ajudam a tomar decisões mais assertivas todos os dias."
+                        </p>
+                        <div class="testimonial-author">
+                            <img src="https://via.placeholder.com/60/10b981/ffffff?text=MC" alt="Maria">
+                            <div>
+                                <h6>Maria Costa</h6>
+                                <p>Gerente de Vendas</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="testimonial-card">
+                        <p class="testimonial-text">
+                            "O sistema é intuitivo e fácil de usar. Minha equipe se adaptou rapidamente e agora temos métricas claras para acompanhar o desempenho."
+                        </p>
+                        <div class="testimonial-author">
+                            <img src="https://via.placeholder.com/60/f59e0b/ffffff?text=PO" alt="Paulo">
+                            <div>
+                                <h6>Paulo Oliveira</h6>
+                                <p>Diretor Comercial</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="container">
+            <div class="text-center cta-content">
+                <h2>Pronto para revolucionar suas vendas?</h2>
+                <p>
+                    Junte-se a milhares de vendedores que já transformaram seus resultados com o Aprimore360.
+                </p>
+                <a href="/cadastro" class="btn btn-hero btn-hero-primary">
+                    <i class="fas fa-rocket me-2"></i>Comece seu Teste Grátis
+                </a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4 mb-lg-0">
+                    <div class="footer-brand">
+                        <i class="fas fa-chart-line me-2"></i>Aprimore360
+                    </div>
+                    <p class="footer-description">
+                        A plataforma completa de gestão comercial para vendedores e equipes de alta performance.
+                    </p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                
+                <div class="col-lg-2 col-md-4 mb-4 mb-md-0">
+                    <h5>Produto</h5>
+                    <ul class="footer-links">
+                        <li><a href="#features">Funcionalidades</a></li>
+                        <li><a href="#pricing">Preços</a></li>
+                        <li><a href="#">Integrações</a></li>
+                        <li><a href="#">Atualizações</a></li>
+                    </ul>
+                </div>
+                
+                <div class="col-lg-2 col-md-4 mb-4 mb-md-0">
+                    <h5>Empresa</h5>
+                    <ul class="footer-links">
+                        <li><a href="#">Sobre Nós</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Carreiras</a></li>
+                        <li><a href="#">Contato</a></li>
+                    </ul>
+                </div>
+                
+                <div class="col-lg-2 col-md-4 mb-4 mb-md-0">
+                    <h5>Suporte</h5>
+                    <ul class="footer-links">
+                        <li><a href="#">Central de Ajuda</a></li>
+                        <li><a href="#">Documentação</a></li>
+                        <li><a href="#">Status</a></li>
+                        <li><a href="#">API</a></li>
+                    </ul>
+                </div>
+                
+                <div class="col-lg-2 col-md-4">
+                    <h5>Legal</h5>
+                    <ul class="footer-links">
+                        <li><a href="#">Termos de Uso</a></li>
+                        <li><a href="#">Privacidade</a></li>
+                        <li><a href="#">Cookies</a></li>
+                        <li><a href="#">Licenças</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom text-center">
+                <p>&copy; 2025 Aprimore360. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+        
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
