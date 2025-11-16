@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
 {% block title %}Metas - Gestão Comercial{% endblock %}
-{% block page_title %}Metas e Performance{% endblock %}
+{% block page_title %}Metas e Desempenho{% endblock %}
 
 {% block extra_css %}
 <style>
     .progress-circle {
+        position: relative;
         width: 200px;
         height: 200px;
-        position: relative;
         margin: 0 auto;
     }
     
@@ -17,61 +17,82 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        font-size: 36px;
+        font-size: 2.5rem;
         font-weight: bold;
-        color: var(--primary);
-    }
-    
-    .ranking-card {
-        background: white;
-        border-radius: 15px;
-        padding: 20px;
-        margin-bottom: 15px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        transition: all 0.3s;
-    }
-    
-    .ranking-card:hover {
-        transform: translateX(5px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        color: #667eea;
     }
     
     .ranking-position {
-        width: 50px;
-        height: 50px;
+        width: 80px;
+        height: 80px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
+        font-size: 2rem;
         font-weight: bold;
-        font-size: 20px;
+        color: white;
     }
     
-    .gold { background: linear-gradient(135deg, #FFD700, #FFA500); color: white; }
-    .silver { background: linear-gradient(135deg, #C0C0C0, #808080); color: white; }
-    .bronze { background: linear-gradient(135deg, #CD7F32, #8B4513); color: white; }
+    .ranking-position.gold {
+        background: linear-gradient(135deg, #FFD700, #FFA500);
+    }
+    
+    .ranking-position.silver {
+        background: linear-gradient(135deg, #C0C0C0, #A8A8A8);
+    }
+    
+    .ranking-position.bronze {
+        background: linear-gradient(135deg, #CD7F32, #A0522D);
+    }
+    
+    .ranking-card {
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .ranking-card.highlight {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+        border: 2px solid #667eea;
+    }
+    
+    .ranking-card .position {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #667eea;
+        min-width: 40px;
+    }
+    
+    .ranking-card .info {
+        flex: 1;
+    }
+    
+    .ranking-card .value {
+        font-weight: bold;
+        color: #667eea;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid">
-    <!-- Period Selector -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="btn-group" role="group">
-                <button class="btn btn-outline-primary active" onclick="changePeriod('month')">Mês Atual</button>
-                <button class="btn btn-outline-primary" onclick="changePeriod('quarter')">Trimestre</button>
-                <button class="btn btn-outline-primary" onclick="changePeriod('semester')">Semestre</button>
-                <button class="btn btn-outline-primary" onclick="changePeriod('year')">Ano</button>
-            </div>
+    <!-- Header Actions -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <select class="form-select" id="mesSelect" onchange="loadMetas()">
+                <option value="">Mês Atual</option>
+            </select>
         </div>
-        <div class="col-md-6 text-end">
-            <button class="btn btn-gradient" onclick="openGoalModal()">
-                <i class="fas fa-bullseye"></i> Definir Meta
+        <div>
+            <button class="btn btn-outline-primary" onclick="openGoalModal()">
+                <i class="fas fa-edit"></i> Editar Meta
             </button>
-            <button class="btn btn-outline-primary" onclick="exportReport()">
+            <button class="btn btn-gradient" onclick="exportReport()">
                 <i class="fas fa-download"></i> Exportar Relatório
             </button>
         </div>
@@ -133,7 +154,9 @@
         <div class="col-md-8">
             <div class="stat-card">
                 <h5 class="mb-3">Evolução Diária</h5>
-                <canvas id="dailyChart" height="100"></canvas>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="dailyChart"></canvas>
+                </div>
             </div>
         </div>
         
@@ -186,7 +209,9 @@
         <div class="col-md-6">
             <div class="stat-card">
                 <h5 class="mb-3">Metas por Categoria</h5>
-                <canvas id="categoryChart" height="150"></canvas>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="categoryChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -197,58 +222,48 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Definir Meta</h5>
+                <h5 class="modal-title">Definir Meta Mensal</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="goalForm">
                     <div class="mb-3">
-                        <label class="form-label">Período</label>
-                        <select class="form-select" id="periodo">
-                            <option value="month">Mês Atual</option>
-                            <option value="quarter">Trimestre</option>
-                            <option value="year">Ano</option>
-                        </select>
+                        <label class="form-label">Valor da Meta (R$)</label>
+                        <input type="number" class="form-control" id="goalValue" step="0.01" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Valor da Meta</label>
-                        <input type="number" class="form-control" id="valorMetaInput" step="0.01" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Observações</label>
-                        <textarea class="form-control" id="observacoesMetaInput" rows="3"></textarea>
+                        <label class="form-label">Mês/Ano</label>
+                        <input type="month" class="form-control" id="goalMonth" required>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-gradient" onclick="saveGoal()">
-                    <i class="fas fa-save"></i> Salvar Meta
-                </button>
+                <button type="button" class="btn btn-gradient" onclick="saveGoal()">Salvar Meta</button>
             </div>
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    let progressChart, dailyChart, categoryChart;
-    let currentPeriod = 'month';
+    let progressChart;
+    let dailyChart;
+    let categoryChart;
     
-    // Load Goals Data
-    async function loadGoals() {
+    // Load Metas
+    async function loadMetas() {
         try {
             showLoading();
             
             const response = await fetch('/api/metas');
             const data = await response.json();
             
-            // Update main metrics
+            // Update values
+            document.getElementById('progressValue').textContent = `${data.percentual.toFixed(1)}%`;
             document.getElementById('valorRealizado').textContent = formatCurrency(data.realizado);
             document.getElementById('valorMeta').textContent = formatCurrency(data.metaMensal);
-            document.getElementById('progressValue').textContent = `${data.percentual}%`;
             document.getElementById('diasRestantes').textContent = data.diasRestantes;
             document.getElementById('metaDiaria').textContent = formatCurrency(data.metaDiaria);
             document.getElementById('projecaoFinal').textContent = formatCurrency(data.realizado + (data.metaDiaria * data.diasRestantes));
@@ -280,7 +295,8 @@
     
     // Update Progress Chart
     function updateProgressChart(percentage) {
-        const ctx = document.getElementById('progressChart').getContext('2d');
+        const ctx = document.getElementById('progressChart');
+        if (!ctx) return;
         
         if (progressChart) progressChart.destroy();
         
@@ -313,7 +329,8 @@
     
     // Update Daily Chart
     function updateDailyChart() {
-        const ctx = document.getElementById('dailyChart').getContext('2d');
+        const ctx = document.getElementById('dailyChart');
+        if (!ctx) return;
         
         // Generate sample data for current month
         const days = [];
@@ -391,7 +408,8 @@
     
     // Update Category Chart
     function updateCategoryChart() {
-        const ctx = document.getElementById('categoryChart').getContext('2d');
+        const ctx = document.getElementById('categoryChart');
+        if (!ctx) return;
         
         if (categoryChart) categoryChart.destroy();
         
@@ -445,53 +463,36 @@
             const positionClass = r.position === 1 ? 'gold' : r.position === 2 ? 'silver' : r.position === 3 ? 'bronze' : 'bg-light';
             
             return `
-                <div class="ranking-card ${r.isUser ? 'border-primary border-2' : ''}">
-                    <div class="d-flex align-items-center">
-                        <div class="ranking-position ${positionClass} me-3">
-                            ${r.position}°
-                        </div>
-                        <div>
-                            <strong>${r.name}</strong><br>
-                            <small class="text-muted">${formatCurrency(r.value)}</small>
-                        </div>
+                <div class="ranking-card ${r.isUser ? 'highlight' : ''}">
+                    <div class="position">${r.position}°</div>
+                    <div class="info">
+                        <strong>${r.name}</strong><br>
+                        <small class="text-muted">${r.percentage}% da meta</small>
                     </div>
-                    <div class="text-end">
-                        <strong class="${r.percentage >= 100 ? 'text-success' : 'text-warning'}">
-                            ${r.percentage}%
-                        </strong><br>
-                        <small class="text-muted">da meta</small>
-                    </div>
+                    <div class="value">${formatCurrency(r.value)}</div>
                 </div>
             `;
         }).join('');
     }
     
-    // Change Period
-    function changePeriod(period) {
-        currentPeriod = period;
-        
-        // Update active button
-        document.querySelectorAll('.btn-group .btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        event.target.classList.add('active');
-        
-        // Reload data
-        loadGoals();
-    }
-    
     // Open Goal Modal
     function openGoalModal() {
-        document.getElementById('goalForm').reset();
+        const now = new Date();
+        document.getElementById('goalMonth').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         new bootstrap.Modal(document.getElementById('goalModal')).show();
     }
     
     // Save Goal
     async function saveGoal() {
+        const form = document.getElementById('goalForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        
         const goalData = {
-            periodo: document.getElementById('periodo').value,
-            valor: parseFloat(document.getElementById('valorMetaInput').value),
-            observacoes: document.getElementById('observacoesMetaInput').value
+            valor: parseFloat(document.getElementById('goalValue').value),
+            mes: document.getElementById('goalMonth').value
         };
         
         try {
@@ -499,23 +500,19 @@
             
             const response = await fetch('/api/metas', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(goalData)
             });
             
-            if (response.ok) {
-                Swal.fire('Sucesso', 'Meta definida com sucesso!', 'success');
-                bootstrap.Modal.getInstance(document.getElementById('goalModal')).hide();
-                loadGoals();
-            } else {
-                Swal.fire('Erro', 'Erro ao salvar meta', 'error');
-            }
+            if (!response.ok) throw new Error('Erro ao salvar meta');
+            
+            showToast('Meta definida com sucesso!', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('goalModal')).hide();
+            loadMetas();
             
         } catch (error) {
             console.error('Erro ao salvar meta:', error);
-            Swal.fire('Erro', 'Erro ao salvar meta', 'error');
+            showToast('Erro ao salvar meta', 'error');
         } finally {
             hideLoading();
         }
@@ -523,10 +520,23 @@
     
     // Export Report
     function exportReport() {
-        Swal.fire('Info', 'Exportação de relatório em desenvolvimento', 'info');
+        showToast('Funcionalidade em desenvolvimento', 'info');
     }
     
-    // Initialize on load
-    document.addEventListener('DOMContentLoaded', loadGoals);
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        loadMetas();
+        
+        // Populate month selector
+        const select = document.getElementById('mesSelect');
+        const now = new Date();
+        for (let i = 0; i < 12; i++) {
+            const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const option = document.createElement('option');
+            option.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            option.textContent = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+            if (i > 0) select.appendChild(option);
+        }
+    });
 </script>
 {% endblock %}
