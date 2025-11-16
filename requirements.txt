@@ -1,15 +1,25 @@
-Flask==3.0.0
-firebase-admin==6.3.0
+# Framework Web
+Flask==2.3.3
+Flask-CORS==4.0.0
+Flask-Login==0.6.2
+Flask-JWT-Extended==4.5.2
+Werkzeug==2.3.7
+
+# Firebase
+firebase-admin==6.2.0
+
+# Segurança
+bcrypt==4.0.1
 python-dotenv==1.0.0
-gunicorn==21.2.0
-flask-cors==4.0.0
-flask-login==0.6.3
-werkzeug==3.0.1
-requests==2.31.0
-geopy==2.4.1
-pandas==2.1.4
-numpy==1.26.2
-flask-mail==0.9.1
-bcrypt==4.1.2
-flask-jwt-extended==4.6.0
-folium==0.15.1
+
+# Geolocalização
+geopy==2.4.0
+
+# Data Science (para relatórios)
+pandas==2.1.1
+
+# Timezone
+pytz==2023.3
+
+# Outros
+folium==0.14.0

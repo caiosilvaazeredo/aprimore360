@@ -1,115 +1,117 @@
 {% extends "base.html" %}
 
-{% block title %}Pedidos - Gestão Comercial{% endblock %}
-{% block page_title %}Pedidos de Venda{% endblock %}
+{% block title %}Pedidos - ComercialPRO{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Header Actions -->
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <div class="input-group">
-                <span class="input-group-text">
-                    <i class="fas fa-search"></i>
-                </span>
-                <input type="text" class="form-control" id="searchOrder" placeholder="Buscar pedidos...">
-                <select class="form-select" style="max-width: 200px;" id="filterStatus">
-                    <option value="">Todos Status</option>
-                    <option value="pendente">Pendente</option>
-                    <option value="aprovado">Aprovado</option>
-                    <option value="faturado">Faturado</option>
-                    <option value="cancelado">Cancelado</option>
-                </select>
-            </div>
+<div class="pedidos-content">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-1">Gestão de Pedidos</h4>
+            <p class="text-muted mb-0">Acompanhe seus pedidos e comissões</p>
         </div>
-        <div class="col-md-4 text-end">
-            <button class="btn btn-gradient" onclick="openOrderModal()">
-                <i class="fas fa-plus"></i> Novo Pedido
-            </button>
-            <button class="btn btn-outline-primary" onclick="exportOrders()">
-                <i class="fas fa-download"></i> Exportar
-            </button>
-        </div>
+        <button class="btn btn-primary" onclick="openPedidoModal()">
+            <i class="fas fa-plus me-2"></i>Novo Pedido
+        </button>
     </div>
     
-    <!-- Orders Summary -->
-    <div class="row mb-4">
+    <!-- Cards de Resumo -->
+    <div class="row g-4 mb-4">
         <div class="col-md-3">
-            <div class="stat-card">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-2">Total em Pedidos</h6>
-                        <h3 class="mb-0" id="totalPedidos">R$ 0</h3>
-                    </div>
-                    <div class="icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                        <i class="fas fa-shopping-cart"></i>
-                    </div>
+            <div class="summary-card">
+                <div class="summary-icon" style="background: #667eea;">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="summary-info">
+                    <h3 id="totalPedidos">0</h3>
+                    <p>Total de Pedidos</p>
                 </div>
             </div>
         </div>
-        
         <div class="col-md-3">
-            <div class="stat-card">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-2">Pedidos Hoje</h6>
-                        <h3 class="mb-0" id="pedidosHoje">0</h3>
-                    </div>
-                    <div class="icon" style="background: #10b981; color: white;">
-                        <i class="fas fa-calendar-day"></i>
-                    </div>
+            <div class="summary-card">
+                <div class="summary-icon" style="background: #10b981;">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="summary-info">
+                    <h3 id="valorTotal">R$ 0</h3>
+                    <p>Valor Total</p>
                 </div>
             </div>
         </div>
-        
         <div class="col-md-3">
-            <div class="stat-card">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-2">Ticket Médio</h6>
-                        <h3 class="mb-0" id="ticketMedio">R$ 0</h3>
-                    </div>
-                    <div class="icon" style="background: #f59e0b; color: white;">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
+            <div class="summary-card">
+                <div class="summary-icon" style="background: #f59e0b;">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="summary-info">
+                    <h3 id="pendentes">0</h3>
+                    <p>Pendentes</p>
                 </div>
             </div>
         </div>
-        
         <div class="col-md-3">
-            <div class="stat-card">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-2">Comissão Total</h6>
-                        <h3 class="mb-0 text-success" id="comissaoTotal">R$ 0</h3>
-                    </div>
-                    <div class="icon" style="background: #8b5cf6; color: white;">
-                        <i class="fas fa-hand-holding-usd"></i>
-                    </div>
+            <div class="summary-card">
+                <div class="summary-icon" style="background: #ef4444;">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <div class="summary-info">
+                    <h3 id="comissoes">R$ 0</h3>
+                    <p>Comissões</p>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Orders Table -->
-    <div class="custom-table">
+    <!-- Filtros -->
+    <div class="card-custom mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <input type="date" class="form-control" id="dataInicio" onchange="filterPedidos()">
+                </div>
+                <div class="col-md-3">
+                    <input type="date" class="form-control" id="dataFim" onchange="filterPedidos()">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="filterStatusPedido" onchange="filterPedidos()">
+                        <option value="">Todos os Status</option>
+                        <option value="pendente">Pendente</option>
+                        <option value="aprovado">Aprovado</option>
+                        <option value="entregue">Entregue</option>
+                        <option value="cancelado">Cancelado</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-outline-secondary w-100" onclick="exportPedidos()">
+                        <i class="fas fa-file-excel me-2"></i>Exportar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de Pedidos -->
+    <div class="card-custom">
         <div class="table-responsive">
-            <table class="table table-hover" id="ordersTable">
+            <table class="table table-hover mb-0">
                 <thead>
                     <tr>
-                        <th>Número</th>
-                        <th>Data</th>
+                        <th>Pedido</th>
                         <th>Cliente</th>
-                        <th>Produtos</th>
-                        <th>Valor Total</th>
+                        <th>Data</th>
+                        <th>Valor</th>
+                        <th>Comissão</th>
                         <th>Status</th>
-                        <th>Pagamento</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
-                <tbody id="ordersTableBody">
+                <tbody id="pedidosTable">
                     <tr>
-                        <td colspan="8" class="text-center">Carregando pedidos...</td>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                            <p class="mt-2 mb-0">Carregando pedidos...</p>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -117,577 +119,577 @@
     </div>
 </div>
 
-<!-- Order Modal -->
-<div class="modal fade" id="orderModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
+<!-- Modal Novo Pedido -->
+<div class="modal fade" id="pedidoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="orderModalTitle">Novo Pedido</h5>
+                <h5 class="modal-title">
+                    <i class="fas fa-shopping-cart me-2"></i>Novo Pedido
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="orderForm">
-                    <input type="hidden" id="orderId">
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-4">
+                <form id="pedidoForm">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
                             <label class="form-label">Cliente *</label>
-                            <select class="form-select" id="orderClienteId" required>
+                            <select class="form-select" id="pedidoCliente" required>
                                 <option value="">Selecione um cliente</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Data do Pedido *</label>
-                            <input type="date" class="form-control" id="orderData" required>
+                        <div class="col-md-3">
+                            <label class="form-label">Data *</label>
+                            <input type="date" class="form-control" id="pedidoData" required>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Previsão de Entrega</label>
-                            <input type="date" class="form-control" id="previsaoEntrega">
+                        <div class="col-md-3">
+                            <label class="form-label">Comissão (%)</label>
+                            <input type="number" class="form-control" id="pedidoComissao" value="5" min="0" max="100" step="0.1">
                         </div>
                     </div>
                     
-                    <hr>
-                    
-                    <!-- Products Section -->
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6>Produtos</h6>
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addProductRow()">
-                            <i class="fas fa-plus"></i> Adicionar Produto
-                        </button>
+                    <!-- Itens do Pedido -->
+                    <h6 class="mb-3"><i class="fas fa-list me-2"></i>Itens do Pedido</h6>
+                    <div id="itensPedido">
+                        <div class="item-row mb-3">
+                            <div class="row g-2">
+                                <div class="col-md-5">
+                                    <input type="text" class="form-control" placeholder="Descrição do produto" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="number" class="form-control" placeholder="Qtd" min="1" value="1" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="number" class="form-control" placeholder="Valor unit." step="0.01" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-outline-danger w-100" onclick="removeItem(this)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
-                    <div class="table-responsive mb-3">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th style="width: 40%">Produto</th>
-                                    <th style="width: 15%">Quantidade</th>
-                                    <th style="width: 15%">Valor Unit.</th>
-                                    <th style="width: 10%">Desc. %</th>
-                                    <th style="width: 15%">Total</th>
-                                    <th style="width: 5%"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="productsTableBody">
-                                <tr id="productRow0">
-                                    <td>
-                                        <select class="form-select form-select-sm product-select" onchange="updateProductPrice(0)">
-                                            <option value="">Selecione...</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <input type="number" class="form-control form-control-sm" min="1" value="1" onchange="calculateRowTotal(0)">
-                                    </td>
-                                    <td>
-                                        <input type="number" class="form-control form-control-sm" step="0.01" value="0" onchange="calculateRowTotal(0)">
-                                    </td>
-                                    <td>
-                                        <input type="number" class="form-control form-control-sm" min="0" max="100" value="0" onchange="calculateRowTotal(0)">
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm" readonly value="R$ 0,00">
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-danger" onclick="removeProductRow(0)">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="4" class="text-end"><strong>Subtotal:</strong></td>
-                                    <td colspan="2"><strong id="orderSubtotal">R$ 0,00</strong></td>
-                                </tr>
-                                <tr>
-                                    <td colspan="4" class="text-end"><strong>Desconto:</strong></td>
-                                    <td colspan="2">
-                                        <input type="number" class="form-control form-control-sm" id="orderDesconto" value="0" step="0.01" onchange="calculateTotal()">
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td colspan="4" class="text-end"><strong>Total:</strong></td>
-                                    <td colspan="2"><strong class="text-success" id="orderTotal">R$ 0,00</strong></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm mb-4" onclick="addItem()">
+                        <i class="fas fa-plus me-2"></i>Adicionar Item
+                    </button>
                     
-                    <hr>
-                    
-                    <div class="row">
-                        <div class="col-md-4">
-                            <label class="form-label">Condição de Pagamento</label>
-                            <select class="form-select" id="condicaoPagamento">
-                                <option value="a-vista">À Vista</option>
-                                <option value="30">30 dias</option>
-                                <option value="30/60">30/60 dias</option>
-                                <option value="30/60/90">30/60/90 dias</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Forma de Pagamento</label>
-                            <select class="form-select" id="formaPagamento">
-                                <option value="boleto">Boleto</option>
-                                <option value="transferencia">Transferência</option>
-                                <option value="cartao">Cartão</option>
-                                <option value="pix">PIX</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Status</label>
-                            <select class="form-select" id="orderStatus">
-                                <option value="pendente">Pendente</option>
-                                <option value="aprovado">Aprovado</option>
-                                <option value="faturado">Faturado</option>
-                                <option value="cancelado">Cancelado</option>
-                            </select>
+                    <!-- Totais -->
+                    <div class="bg-light p-3 rounded">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Desconto (R$)</label>
+                                <input type="number" class="form-control" id="pedidoDesconto" value="0" min="0" step="0.01" onchange="calcularTotais()">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Total do Pedido</label>
+                                <h3 id="pedidoTotal" class="text-success mb-0">R$ 0,00</h3>
+                                <small class="text-muted">Comissão: <span id="pedidoComissaoValor">R$ 0,00</span></small>
+                            </div>
                         </div>
                     </div>
                     
                     <div class="mt-3">
                         <label class="form-label">Observações</label>
-                        <textarea class="form-control" id="orderObservacoes" rows="3"></textarea>
+                        <textarea class="form-control" id="pedidoObs" rows="2"></textarea>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-outline-primary" onclick="saveOrder(true)">
-                    <i class="fas fa-save"></i> Salvar como Rascunho
-                </button>
-                <button type="button" class="btn btn-gradient" onclick="saveOrder(false)">
-                    <i class="fas fa-check"></i> Finalizar Pedido
+                <button type="button" class="btn btn-primary" onclick="savePedido()">
+                    <i class="fas fa-save me-2"></i>Salvar Pedido
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    let orders = [];
-    let clients = [];
-    let products = [];
-    let productRowCount = 1;
+<style>
+    .card-custom {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
     
-    // Load Orders
-    async function loadOrders() {
+    .summary-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+    
+    .summary-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+        margin-right: 15px;
+    }
+    
+    .summary-info h3 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+    }
+    
+    .summary-info p {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+    
+    .table th {
+        font-weight: 600;
+        color: #64748b;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        border-bottom: 2px solid #f1f5f9;
+    }
+    
+    .table td {
+        vertical-align: middle;
+        padding: 15px;
+    }
+    
+    .pedido-id {
+        font-weight: 600;
+        color: #667eea;
+    }
+    
+    .status-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .status-pendente {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+    
+    .status-aprovado {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+    
+    .status-entregue {
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+    }
+    
+    .status-cancelado {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+    
+    .btn-action {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+
+<script>
+    let pedidos = [];
+    let clientes = [];
+    let pedidoModal;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        pedidoModal = new bootstrap.Modal(document.getElementById('pedidoModal'));
+        
+        // Data padrão (mês atual)
+        const hoje = new Date();
+        const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+        document.getElementById('dataInicio').value = inicioMes.toISOString().split('T')[0];
+        document.getElementById('dataFim').value = hoje.toISOString().split('T')[0];
+        document.getElementById('pedidoData').value = hoje.toISOString().split('T')[0];
+        
+        loadClientes();
+        loadPedidos();
+        
+        // Listener para calcular totais
+        document.getElementById('itensPedido').addEventListener('input', calcularTotais);
+        document.getElementById('pedidoComissao').addEventListener('input', calcularTotais);
+    });
+    
+    async function loadClientes() {
         try {
-            showLoading();
+            const response = await fetch('/api/clientes');
+            clientes = await response.json();
             
+            const select = document.getElementById('pedidoCliente');
+            clientes.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.id;
+                option.textContent = c.fantasia;
+                select.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Erro ao carregar clientes:', error);
+        }
+    }
+    
+    async function loadPedidos() {
+        try {
             const response = await fetch('/api/pedidos');
-            orders = await response.json();
-            
-            // Update summary
-            updateSummary();
-            
-            // Display orders
-            displayOrders(orders);
-            
-            // Load clients and products for dropdowns
-            await loadClientsAndProducts();
-            
+            pedidos = await response.json();
+            renderPedidos(pedidos);
+            updateSummary(pedidos);
         } catch (error) {
             console.error('Erro ao carregar pedidos:', error);
-        } finally {
-            hideLoading();
+            showToast('Erro ao carregar pedidos', 'danger');
         }
     }
     
-    // Update Summary
-    function updateSummary() {
-        const today = new Date().toISOString().split('T')[0];
-        const todayOrders = orders.filter(o => o.data === today);
+    function renderPedidos(lista) {
+        const tbody = document.getElementById('pedidosTable');
         
-        const total = orders.reduce((sum, o) => sum + (o.valorTotal || 0), 0);
-        const commission = total * 0.05;
-        const average = orders.length > 0 ? total / orders.length : 0;
-        
-        document.getElementById('totalPedidos').textContent = formatCurrency(total);
-        document.getElementById('pedidosHoje').textContent = todayOrders.length;
-        document.getElementById('ticketMedio').textContent = formatCurrency(average);
-        document.getElementById('comissaoTotal').textContent = formatCurrency(commission);
-    }
-    
-    // Display Orders
-    function displayOrders(ordersList) {
-        const tbody = document.getElementById('ordersTableBody');
-        
-        if (ordersList.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center">Nenhum pedido encontrado</td></tr>';
-            return;
-        }
-        
-        tbody.innerHTML = ordersList.map(order => {
-            const statusClass = order.status === 'aprovado' ? 'active' : 
-                                order.status === 'cancelado' ? 'inactive' : 
-                                order.status === 'faturado' ? 'success' : 'pending';
-            
-            return `
+        if (lista.length === 0) {
+            tbody.innerHTML = `
                 <tr>
-                    <td><strong>${order.numero || order.id}</strong></td>
-                    <td>${formatDate(order.data)}</td>
-                    <td>${order.cliente || 'N/A'}</td>
-                    <td>${order.itens ? order.itens.length : 0} itens</td>
-                    <td><strong>${formatCurrency(order.valorTotal)}</strong></td>
-                    <td>
-                        <span class="badge-status badge-${statusClass}">
-                            ${order.status === 'aprovado' ? 'Aprovado' : 
-                              order.status === 'cancelado' ? 'Cancelado' : 
-                              order.status === 'faturado' ? 'Faturado' : 'Pendente'}
-                        </span>
-                    </td>
-                    <td>${order.condicaoPagamento || 'À Vista'}</td>
-                    <td>
-                        <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-primary" onclick="viewOrder('${order.id}')" title="Visualizar">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="btn btn-outline-success" onclick="editOrder('${order.id}')" title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-outline-info" onclick="printOrder('${order.id}')" title="Imprimir">
-                                <i class="fas fa-print"></i>
-                            </button>
-                        </div>
+                    <td colspan="7" class="text-center py-5">
+                        <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhum pedido encontrado</p>
+                        <button class="btn btn-primary btn-sm" onclick="openPedidoModal()">
+                            <i class="fas fa-plus me-2"></i>Criar primeiro pedido
+                        </button>
                     </td>
                 </tr>
             `;
-        }).join('');
-        
-        // Initialize DataTable if not already
-        if (!$.fn.DataTable.isDataTable('#ordersTable')) {
-            $('#ordersTable').DataTable({
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json'
-                },
-                pageLength: 25,
-                order: [[1, 'desc']],
-                dom: 'rtip'
-            });
+            return;
         }
-    }
-    
-    // Load Clients and Products
-    async function loadClientsAndProducts() {
-        try {
-            // Load clients
-            const clientsResponse = await fetch('/api/clientes');
-            clients = await clientsResponse.json();
-            
-            const clientSelect = document.getElementById('orderClienteId');
-            clientSelect.innerHTML = '<option value="">Selecione um cliente</option>' + 
-                clients.map(c => `<option value="${c.id}">${c.fantasia}</option>`).join('');
-            
-            // Load products
-            const productsResponse = await fetch('/api/produtos');
-            products = await productsResponse.json();
-            
-            updateProductSelects();
-            
-        } catch (error) {
-            console.error('Erro ao carregar clientes e produtos:', error);
-        }
-    }
-    
-    // Update Product Selects
-    function updateProductSelects() {
-        const selects = document.querySelectorAll('.product-select');
-        const productOptions = '<option value="">Selecione...</option>' + 
-            products.map(p => `<option value="${p.id}" data-price="${p.preco}">${p.nome} - ${p.codigo}</option>`).join('');
         
-        selects.forEach(select => {
-            const currentValue = select.value;
-            select.innerHTML = productOptions;
-            select.value = currentValue;
-        });
-    }
-    
-    // Open Order Modal
-    function openOrderModal() {
-        document.getElementById('orderForm').reset();
-        document.getElementById('orderId').value = '';
-        document.getElementById('orderModalTitle').textContent = 'Novo Pedido';
-        document.getElementById('orderData').value = new Date().toISOString().split('T')[0];
-        
-        // Reset products table
-        document.getElementById('productsTableBody').innerHTML = `
-            <tr id="productRow0">
+        tbody.innerHTML = lista.map(p => `
+            <tr>
                 <td>
-                    <select class="form-select form-select-sm product-select" onchange="updateProductPrice(0)">
-                        <option value="">Selecione...</option>
-                    </select>
+                    <span class="pedido-id">#${p.id.slice(-6).toUpperCase()}</span>
+                </td>
+                <td>${p.clienteNome || 'Cliente'}</td>
+                <td>${p.data ? new Date(p.data.seconds ? p.data.seconds * 1000 : p.data).toLocaleDateString('pt-BR') : '-'}</td>
+                <td><strong>R$ ${(p.valorTotal || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></td>
+                <td class="text-success">R$ ${(p.comissaoValor || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                <td>
+                    <span class="status-badge status-${p.status || 'pendente'}">
+                        ${formatStatus(p.status || 'pendente')}
+                    </span>
                 </td>
                 <td>
-                    <input type="number" class="form-control form-control-sm" min="1" value="1" onchange="calculateRowTotal(0)">
-                </td>
-                <td>
-                    <input type="number" class="form-control form-control-sm" step="0.01" value="0" onchange="calculateRowTotal(0)">
-                </td>
-                <td>
-                    <input type="number" class="form-control form-control-sm" min="0" max="100" value="0" onchange="calculateRowTotal(0)">
-                </td>
-                <td>
-                    <input type="text" class="form-control form-control-sm" readonly value="R$ 0,00">
-                </td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-danger" onclick="removeProductRow(0)">
-                        <i class="fas fa-trash"></i>
+                    <button class="btn btn-outline-info btn-action me-1" onclick="viewPedido('${p.id}')" title="Ver">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-outline-success btn-action me-1" onclick="updateStatus('${p.id}')" title="Atualizar Status">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="btn btn-outline-danger btn-action" onclick="cancelPedido('${p.id}')" title="Cancelar">
+                        <i class="fas fa-times"></i>
                     </button>
                 </td>
             </tr>
-        `;
-        
-        productRowCount = 1;
-        updateProductSelects();
-        
-        new bootstrap.Modal(document.getElementById('orderModal')).show();
+        `).join('');
     }
     
-    // Add Product Row
-    function addProductRow() {
-        const tbody = document.getElementById('productsTableBody');
-        const newRow = document.createElement('tr');
-        newRow.id = `productRow${productRowCount}`;
-        newRow.innerHTML = `
-            <td>
-                <select class="form-select form-select-sm product-select" onchange="updateProductPrice(${productRowCount})">
-                    <option value="">Selecione...</option>
-                </select>
-            </td>
-            <td>
-                <input type="number" class="form-control form-control-sm" min="1" value="1" onchange="calculateRowTotal(${productRowCount})">
-            </td>
-            <td>
-                <input type="number" class="form-control form-control-sm" step="0.01" value="0" onchange="calculateRowTotal(${productRowCount})">
-            </td>
-            <td>
-                <input type="number" class="form-control form-control-sm" min="0" max="100" value="0" onchange="calculateRowTotal(${productRowCount})">
-            </td>
-            <td>
-                <input type="text" class="form-control form-control-sm" readonly value="R$ 0,00">
-            </td>
-            <td>
-                <button type="button" class="btn btn-sm btn-danger" onclick="removeProductRow(${productRowCount})">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        `;
+    function updateSummary(lista) {
+        const total = lista.length;
+        const valorTotal = lista.reduce((sum, p) => sum + (p.valorTotal || 0), 0);
+        const pendentes = lista.filter(p => p.status === 'pendente').length;
+        const comissoes = lista.reduce((sum, p) => sum + (p.comissaoValor || 0), 0);
         
-        tbody.appendChild(newRow);
-        productRowCount++;
-        updateProductSelects();
+        document.getElementById('totalPedidos').textContent = total;
+        document.getElementById('valorTotal').textContent = `R$ ${valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        document.getElementById('pendentes').textContent = pendentes;
+        document.getElementById('comissoes').textContent = `R$ ${comissoes.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
     }
     
-    // Remove Product Row
-    function removeProductRow(rowId) {
-        const row = document.getElementById(`productRow${rowId}`);
-        if (row) {
-            row.remove();
-            calculateTotal();
-        }
-    }
-    
-    // Update Product Price
-    function updateProductPrice(rowId) {
-        const row = document.getElementById(`productRow${rowId}`);
-        const select = row.querySelector('.product-select');
-        const priceInput = row.querySelectorAll('input')[1];
+    function filterPedidos() {
+        const dataInicio = document.getElementById('dataInicio').value;
+        const dataFim = document.getElementById('dataFim').value;
+        const status = document.getElementById('filterStatusPedido').value;
         
-        const selectedOption = select.options[select.selectedIndex];
-        const price = selectedOption.getAttribute('data-price');
-        
-        if (price) {
-            priceInput.value = price;
-            calculateRowTotal(rowId);
-        }
-    }
-    
-    // Calculate Row Total
-    function calculateRowTotal(rowId) {
-        const row = document.getElementById(`productRow${rowId}`);
-        const inputs = row.querySelectorAll('input');
-        
-        const quantity = parseFloat(inputs[0].value) || 0;
-        const price = parseFloat(inputs[1].value) || 0;
-        const discount = parseFloat(inputs[2].value) || 0;
-        
-        const total = quantity * price * (1 - discount / 100);
-        inputs[3].value = formatCurrency(total);
-        
-        calculateTotal();
-    }
-    
-    // Calculate Total
-    function calculateTotal() {
-        let subtotal = 0;
-        
-        const rows = document.querySelectorAll('#productsTableBody tr');
-        rows.forEach(row => {
-            const inputs = row.querySelectorAll('input');
-            const quantity = parseFloat(inputs[0].value) || 0;
-            const price = parseFloat(inputs[1].value) || 0;
-            const discount = parseFloat(inputs[2].value) || 0;
+        let filtered = pedidos.filter(p => {
+            const pedidoDate = p.data ? new Date(p.data.seconds ? p.data.seconds * 1000 : p.data) : null;
             
-            subtotal += quantity * price * (1 - discount / 100);
+            const matchDate = !dataInicio || !dataFim || !pedidoDate || 
+                (pedidoDate >= new Date(dataInicio) && pedidoDate <= new Date(dataFim + 'T23:59:59'));
+            const matchStatus = !status || p.status === status;
+            
+            return matchDate && matchStatus;
         });
         
-        const discountValue = parseFloat(document.getElementById('orderDesconto').value) || 0;
-        const total = subtotal - discountValue;
-        
-        document.getElementById('orderSubtotal').textContent = formatCurrency(subtotal);
-        document.getElementById('orderTotal').textContent = formatCurrency(total);
+        renderPedidos(filtered);
+        updateSummary(filtered);
     }
     
-    // Save Order
-    async function saveOrder(isDraft) {
-        const orderId = document.getElementById('orderId').value;
-        const isEdit = !!orderId;
+    function openPedidoModal() {
+        document.getElementById('pedidoForm').reset();
+        document.getElementById('pedidoData').value = new Date().toISOString().split('T')[0];
+        document.getElementById('pedidoComissao').value = 5;
         
-        // Collect items
+        // Reset itens
+        const container = document.getElementById('itensPedido');
+        container.innerHTML = `
+            <div class="item-row mb-3">
+                <div class="row g-2">
+                    <div class="col-md-5">
+                        <input type="text" class="form-control" placeholder="Descrição do produto" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" class="form-control" placeholder="Qtd" min="1" value="1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" class="form-control" placeholder="Valor unit." step="0.01" required>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-outline-danger w-100" onclick="removeItem(this)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        calcularTotais();
+        pedidoModal.show();
+    }
+    
+    function addItem() {
+        const container = document.getElementById('itensPedido');
+        const itemHtml = `
+            <div class="item-row mb-3">
+                <div class="row g-2">
+                    <div class="col-md-5">
+                        <input type="text" class="form-control" placeholder="Descrição do produto" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" class="form-control" placeholder="Qtd" min="1" value="1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" class="form-control" placeholder="Valor unit." step="0.01" required>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-outline-danger w-100" onclick="removeItem(this)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', itemHtml);
+    }
+    
+    function removeItem(btn) {
+        const items = document.querySelectorAll('.item-row');
+        if (items.length > 1) {
+            btn.closest('.item-row').remove();
+            calcularTotais();
+        } else {
+            showToast('O pedido precisa ter pelo menos um item', 'warning');
+        }
+    }
+    
+    function calcularTotais() {
+        const items = document.querySelectorAll('.item-row');
+        let subtotal = 0;
+        
+        items.forEach(item => {
+            const inputs = item.querySelectorAll('input');
+            const qtd = parseFloat(inputs[1].value) || 0;
+            const valor = parseFloat(inputs[2].value) || 0;
+            subtotal += qtd * valor;
+        });
+        
+        const desconto = parseFloat(document.getElementById('pedidoDesconto').value) || 0;
+        const total = subtotal - desconto;
+        const comissaoPercent = parseFloat(document.getElementById('pedidoComissao').value) || 0;
+        const comissaoValor = total * (comissaoPercent / 100);
+        
+        document.getElementById('pedidoTotal').textContent = `R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        document.getElementById('pedidoComissaoValor').textContent = `R$ ${comissaoValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    }
+    
+    async function savePedido() {
+        const clienteId = document.getElementById('pedidoCliente').value;
+        const data = document.getElementById('pedidoData').value;
+        
+        if (!clienteId || !data) {
+            showToast('Selecione um cliente e data', 'warning');
+            return;
+        }
+        
+        // Coletar itens
         const items = [];
-        const rows = document.querySelectorAll('#productsTableBody tr');
-        rows.forEach(row => {
-            const select = row.querySelector('.product-select');
+        document.querySelectorAll('.item-row').forEach(row => {
             const inputs = row.querySelectorAll('input');
+            const descricao = inputs[0].value;
+            const qtd = parseFloat(inputs[1].value) || 0;
+            const valor = parseFloat(inputs[2].value) || 0;
             
-            if (select.value) {
-                const product = products.find(p => p.id === select.value);
-                items.push({
-                    produtoId: select.value,
-                    produto: product.nome,
-                    quantidade: parseFloat(inputs[0].value),
-                    valorUnitario: parseFloat(inputs[1].value),
-                    desconto: parseFloat(inputs[2].value)
-                });
+            if (descricao && qtd > 0 && valor > 0) {
+                items.push({ descricao, quantidade: qtd, valorUnitario: valor, total: qtd * valor });
             }
         });
         
-        const subtotal = items.reduce((sum, item) => 
-            sum + (item.quantidade * item.valorUnitario * (1 - item.desconto / 100)), 0);
-        const desconto = parseFloat(document.getElementById('orderDesconto').value) || 0;
+        if (items.length === 0) {
+            showToast('Adicione pelo menos um item ao pedido', 'warning');
+            return;
+        }
         
-        const orderData = {
-            clienteId: document.getElementById('orderClienteId').value,
-            data: document.getElementById('orderData').value,
-            previsaoEntrega: document.getElementById('previsaoEntrega').value,
+        const subtotal = items.reduce((sum, i) => sum + i.total, 0);
+        const desconto = parseFloat(document.getElementById('pedidoDesconto').value) || 0;
+        const valorTotal = subtotal - desconto;
+        const comissaoPercent = parseFloat(document.getElementById('pedidoComissao').value) || 0;
+        const comissaoValor = valorTotal * (comissaoPercent / 100);
+        
+        const pedidoData = {
+            clienteId,
+            data,
             itens: items,
-            subtotal: subtotal,
-            desconto: desconto,
-            valorTotal: subtotal - desconto,
-            condicaoPagamento: document.getElementById('condicaoPagamento').value,
-            formaPagamento: document.getElementById('formaPagamento').value,
-            status: isDraft ? 'rascunho' : document.getElementById('orderStatus').value,
-            observacoes: document.getElementById('orderObservacoes').value
+            subtotal,
+            desconto,
+            valorTotal,
+            comissaoPercent,
+            comissaoValor,
+            observacoes: document.getElementById('pedidoObs').value,
+            status: 'pendente'
         };
         
         try {
-            showLoading();
-            
-            const url = isEdit ? `/api/pedidos/${orderId}` : '/api/pedidos';
-            const method = isEdit ? 'PUT' : 'POST';
-            
-            const response = await fetch(url, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(orderData)
+            const response = await fetch('/api/pedidos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pedidoData)
             });
             
             if (response.ok) {
-                Swal.fire('Sucesso', `Pedido ${isEdit ? 'atualizado' : 'criado'} com sucesso!`, 'success');
-                bootstrap.Modal.getInstance(document.getElementById('orderModal')).hide();
-                loadOrders();
+                pedidoModal.hide();
+                showToast('Pedido criado com sucesso!', 'success');
+                loadPedidos();
             } else {
-                Swal.fire('Erro', 'Erro ao salvar pedido', 'error');
+                const error = await response.json();
+                showToast(error.error || 'Erro ao criar pedido', 'danger');
             }
-            
         } catch (error) {
             console.error('Erro ao salvar pedido:', error);
-            Swal.fire('Erro', 'Erro ao salvar pedido', 'error');
-        } finally {
-            hideLoading();
+            showToast('Erro ao salvar pedido', 'danger');
         }
     }
     
-    // View Order
-    function viewOrder(orderId) {
-        const order = orders.find(o => o.id === orderId);
-        if (!order) return;
+    async function updateStatus(id) {
+        const pedido = pedidos.find(p => p.id === id);
+        if (!pedido) return;
         
-        // Show order details
-        Swal.fire({
-            title: `Pedido ${order.numero || order.id}`,
-            html: `
-                <div class="text-start">
-                    <p><strong>Cliente:</strong> ${order.cliente}</p>
-                    <p><strong>Data:</strong> ${formatDate(order.data)}</p>
-                    <p><strong>Valor:</strong> ${formatCurrency(order.valorTotal)}</p>
-                    <p><strong>Status:</strong> ${order.status}</p>
-                    <p><strong>Itens:</strong> ${order.itens ? order.itens.length : 0}</p>
-                </div>
-            `,
-            showCancelButton: true,
-            confirmButtonText: 'Editar',
-            cancelButtonText: 'Fechar'
-        }).then(result => {
-            if (result.isConfirmed) {
-                editOrder(orderId);
+        const statusFlow = {
+            'pendente': 'aprovado',
+            'aprovado': 'entregue',
+            'entregue': 'entregue',
+            'cancelado': 'cancelado'
+        };
+        
+        const newStatus = statusFlow[pedido.status] || 'aprovado';
+        
+        if (!confirm(`Atualizar status para "${formatStatus(newStatus)}"?`)) return;
+        
+        try {
+            const response = await fetch(`/api/pedidos/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+            
+            if (response.ok) {
+                showToast('Status atualizado!', 'success');
+                loadPedidos();
+            } else {
+                showToast('Erro ao atualizar', 'danger');
             }
-        });
-    }
-    
-    // Edit Order
-    function editOrder(orderId) {
-        const order = orders.find(o => o.id === orderId);
-        if (!order) return;
-        
-        // Fill form with order data
-        // Implementation would be similar to edit client
-        
-        Swal.fire('Info', 'Edição de pedidos em desenvolvimento', 'info');
-    }
-    
-    // Print Order
-    function printOrder(orderId) {
-        window.print();
-    }
-    
-    // Export Orders
-    function exportOrders() {
-        Swal.fire('Info', 'Exportação de pedidos em desenvolvimento', 'info');
-    }
-    
-    // Search and Filter
-    document.getElementById('searchOrder').addEventListener('keyup', function() {
-        const searchTerm = this.value.toLowerCase();
-        const status = document.getElementById('filterStatus').value;
-        
-        let filtered = orders;
-        
-        if (searchTerm) {
-            filtered = filtered.filter(order => 
-                (order.numero && order.numero.toLowerCase().includes(searchTerm)) ||
-                (order.cliente && order.cliente.toLowerCase().includes(searchTerm))
-            );
+        } catch (error) {
+            showToast('Erro ao atualizar', 'danger');
         }
+    }
+    
+    async function cancelPedido(id) {
+        if (!confirm('Tem certeza que deseja cancelar este pedido?')) return;
         
-        if (status) {
-            filtered = filtered.filter(order => order.status === status);
+        try {
+            const response = await fetch(`/api/pedidos/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'cancelado' })
+            });
+            
+            if (response.ok) {
+                showToast('Pedido cancelado', 'success');
+                loadPedidos();
+            } else {
+                showToast('Erro ao cancelar', 'danger');
+            }
+        } catch (error) {
+            showToast('Erro ao cancelar', 'danger');
         }
+    }
+    
+    function viewPedido(id) {
+        const pedido = pedidos.find(p => p.id === id);
+        if (!pedido) return;
         
-        displayOrders(filtered);
-    });
+        alert(`Pedido #${id.slice(-6)}\n\nCliente: ${pedido.clienteNome}\nValor: R$ ${pedido.valorTotal}\nStatus: ${pedido.status}`);
+    }
     
-    document.getElementById('filterStatus').addEventListener('change', function() {
-        document.getElementById('searchOrder').dispatchEvent(new Event('keyup'));
-    });
+    function exportPedidos() {
+        const csv = [
+            ['ID', 'Cliente', 'Data', 'Valor', 'Comissão', 'Status'].join(','),
+            ...pedidos.map(p => [
+                p.id.slice(-6),
+                p.clienteNome || '',
+                p.data ? new Date(p.data.seconds ? p.data.seconds * 1000 : p.data).toLocaleDateString('pt-BR') : '',
+                p.valorTotal || 0,
+                p.comissaoValor || 0,
+                p.status || ''
+            ].join(','))
+        ].join('\n');
+        
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'pedidos.csv';
+        a.click();
+    }
     
-    // Initialize on load
-    document.addEventListener('DOMContentLoaded', loadOrders);
+    function formatStatus(status) {
+        const statuses = {
+            'pendente': 'Pendente',
+            'aprovado': 'Aprovado',
+            'entregue': 'Entregue',
+            'cancelado': 'Cancelado'
+        };
+        return statuses[status] || status;
+    }
+    
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type} position-fixed`;
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        toast.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+            ${message}
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
 </script>
 {% endblock %}

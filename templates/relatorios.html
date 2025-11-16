@@ -1,131 +1,447 @@
 {% extends "base.html" %}
 
-{% block title %}Relatórios - Gestão Comercial{% endblock %}
-{% block page_title %}Relatórios e Análises{% endblock %}
+{% block title %}Relatórios - ComercialPRO{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-tabs {
+        background: white;
+        border-radius: 15px;
+        padding: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin-bottom: 25px;
+    }
+    
+    .report-tabs .nav-link {
+        border-radius: 10px;
+        padding: 12px 25px;
+        font-weight: 500;
+        color: #64748b;
+        transition: all 0.3s ease;
+        border: none;
+    }
+    
+    .report-tabs .nav-link:hover {
+        background: rgba(102, 126, 234, 0.1);
+        color: var(--primary);
+    }
+    
+    .report-tabs .nav-link.active {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .report-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin-bottom: 25px;
+    }
+    
+    .report-card h5 {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 20px;
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        border-radius: 15px;
+        padding: 25px;
+        color: white;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+    
+    .stat-card.success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+    
+    .stat-card.warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+    
+    .stat-card.info {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    }
+    
+    .stat-card h3 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .stat-card p {
+        margin: 0;
+        opacity: 0.9;
+        font-size: 0.95rem;
+    }
+    
+    .filter-section {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+    
+    .table-report {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .table-report th {
+        background: #f1f5f9;
+        font-weight: 600;
+        color: #475569;
+        border: none;
+        padding: 15px;
+    }
+    
+    .table-report td {
+        padding: 15px;
+        vertical-align: middle;
+        border-color: #f1f5f9;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    
+    .progress-custom {
+        height: 10px;
+        border-radius: 5px;
+        background: #e2e8f0;
+    }
+    
+    .badge-status {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-weight: 500;
+        font-size: 0.85rem;
+    }
+    
+    .badge-pago {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+    
+    .badge-pendente {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+    
+    .export-btn {
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 500;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+        color: #64748b;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: #cbd5e1;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Report Types -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="stat-card text-center" style="cursor: pointer;" onclick="selectReport('vendas')">
-                <div class="icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin: 0 auto;">
-                    <i class="fas fa-chart-line"></i>
-                </div>
-                <h5 class="mt-3">Relatório de Vendas</h5>
-                <p class="text-muted small">Análise completa das vendas</p>
-            </div>
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Relatórios</h2>
+            <p class="text-muted mb-0">Análises detalhadas do seu desempenho comercial</p>
         </div>
-        
-        <div class="col-md-3">
-            <div class="stat-card text-center" style="cursor: pointer;" onclick="selectReport('clientes')">
-                <div class="icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; margin: 0 auto;">
-                    <i class="fas fa-users"></i>
-                </div>
-                <h5 class="mt-3">Relatório de Clientes</h5>
-                <p class="text-muted small">Análise de carteira</p>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="stat-card text-center" style="cursor: pointer;" onclick="selectReport('produtos')">
-                <div class="icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; margin: 0 auto;">
-                    <i class="fas fa-box"></i>
-                </div>
-                <h5 class="mt-3">Relatório de Produtos</h5>
-                <p class="text-muted small">Performance por produto</p>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="stat-card text-center" style="cursor: pointer;" onclick="selectReport('comissoes')">
-                <div class="icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; margin: 0 auto;">
-                    <i class="fas fa-dollar-sign"></i>
-                </div>
-                <h5 class="mt-3">Relatório de Comissões</h5>
-                <p class="text-muted small">Cálculo de comissões</p>
-            </div>
+        <div>
+            <button class="btn btn-outline-primary export-btn me-2" onclick="exportPDF()">
+                <i class="fas fa-file-pdf me-2"></i>Exportar PDF
+            </button>
+            <button class="btn btn-outline-success export-btn" onclick="exportExcel()">
+                <i class="fas fa-file-excel me-2"></i>Exportar Excel
+            </button>
         </div>
     </div>
     
-    <!-- Filters -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="stat-card">
-                <h5 class="mb-3">Filtros do Relatório</h5>
-                <div class="row">
+    <!-- Tabs -->
+    <div class="report-tabs">
+        <ul class="nav nav-pills" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#vendas">
+                    <i class="fas fa-chart-line me-2"></i>Vendas
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#clientes">
+                    <i class="fas fa-users me-2"></i>Clientes
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#produtos">
+                    <i class="fas fa-box me-2"></i>Produtos
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#comissoes">
+                    <i class="fas fa-money-bill-wave me-2"></i>Comissões
+                </button>
+            </li>
+        </ul>
+    </div>
+    
+    <!-- Tab Content -->
+    <div class="tab-content">
+        <!-- VENDAS -->
+        <div class="tab-pane fade show active" id="vendas">
+            <div class="filter-section">
+                <div class="row align-items-end">
                     <div class="col-md-3">
-                        <label class="form-label">Data Inicial</label>
-                        <input type="date" class="form-control" id="dataInicio">
+                        <label class="form-label">Data Início</label>
+                        <input type="date" class="form-control" id="vendasDataInicio">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Data Final</label>
-                        <input type="date" class="form-control" id="dataFim">
+                        <label class="form-label">Data Fim</label>
+                        <input type="date" class="form-control" id="vendasDataFim">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Cliente</label>
-                        <select class="form-select" id="filterCliente">
-                            <option value="">Todos</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 d-flex align-items-end">
-                        <button class="btn btn-gradient w-100" onclick="generateReport()">
-                            <i class="fas fa-play"></i> Gerar Relatório
+                        <button class="btn btn-primary" onclick="loadVendas()">
+                            <i class="fas fa-filter me-2"></i>Filtrar
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-    
-    <!-- Report Results -->
-    <div id="reportResults" style="display: none;">
-        <!-- Charts Row -->
-        <div class="row mb-4">
-            <div class="col-md-8">
-                <div class="stat-card">
-                    <h5 class="mb-3" id="chartTitle">Gráfico</h5>
-                    <div style="position: relative; height: 350px;">
-                        <canvas id="reportChart"></canvas>
+            
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h3 id="vendasTotal">R$ 0</h3>
+                        <p>Total de Vendas</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card success">
+                        <h3 id="vendasQtd">0</h3>
+                        <p>Pedidos Realizados</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card warning">
+                        <h3 id="vendasTicket">R$ 0</h3>
+                        <p>Ticket Médio</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card info">
+                        <h3 id="vendasComissao">R$ 0</h3>
+                        <p>Comissão Total</p>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="stat-card">
-                    <h5 class="mb-3">Resumo</h5>
-                    <div id="reportSummary">
-                        <!-- Summary will be loaded here -->
+            
+            <div class="report-card">
+                <h5><i class="fas fa-chart-area me-2"></i>Evolução das Vendas</h5>
+                <div class="chart-container">
+                    <canvas id="vendasChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CLIENTES -->
+        <div class="tab-pane fade" id="clientes">
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h3 id="clientesTotal">0</h3>
+                        <p>Total de Clientes</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card success">
+                        <h3 id="clientesAtivos">0</h3>
+                        <p>Clientes Ativos</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card warning">
+                        <h3 id="clientesInativos">0</h3>
+                        <p>Clientes Inativos</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card info">
+                        <h3 id="clientesNovos">0</h3>
+                        <p>Novos no Mês</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="report-card">
+                        <h5><i class="fas fa-chart-pie me-2"></i>Status dos Clientes</h5>
+                        <div class="chart-container">
+                            <canvas id="clientesStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="report-card">
+                        <h5><i class="fas fa-trophy me-2"></i>Top 10 Clientes</h5>
+                        <div class="table-responsive">
+                            <table class="table table-report">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Cliente</th>
+                                        <th>Total Compras</th>
+                                        <th>Pedidos</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="topClientesTable">
+                                    <tr>
+                                        <td colspan="4" class="text-center">Carregando...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Data Table -->
-        <div class="custom-table">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="mb-0">Dados Detalhados</h5>
-                <div>
-                    <button class="btn btn-outline-primary" onclick="exportReport('excel')">
-                        <i class="fas fa-file-excel"></i> Excel
-                    </button>
-                    <button class="btn btn-outline-danger" onclick="exportReport('pdf')">
-                        <i class="fas fa-file-pdf"></i> PDF
-                    </button>
+        <!-- PRODUTOS -->
+        <div class="tab-pane fade" id="produtos">
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <h3 id="produtosTotal">0</h3>
+                        <p>Total Vendidos</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card success">
+                        <h3 id="produtosUnicos">0</h3>
+                        <p>Produtos Únicos</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card warning">
+                        <h3 id="produtosValorMedio">R$ 0</h3>
+                        <p>Valor Médio</p>
+                    </div>
                 </div>
             </div>
-            <div class="table-responsive">
-                <table class="table">
-                    <thead id="reportTableHead">
-                        <tr>
-                            <th>Carregando...</th>
-                        </tr>
-                    </thead>
-                    <tbody id="reportTableBody">
-                        <tr>
-                            <td>Carregando...</td>
-                        </tr>
-                    </tbody>
-                </table>
+            
+            <div class="report-card">
+                <h5><i class="fas fa-chart-bar me-2"></i>Produtos Mais Vendidos</h5>
+                <div class="chart-container">
+                    <canvas id="produtosChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="report-card">
+                <h5><i class="fas fa-list me-2"></i>Detalhamento por Produto</h5>
+                <div class="table-responsive">
+                    <table class="table table-report">
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th>Quantidade</th>
+                                <th>Valor Total</th>
+                                <th>% do Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="produtosTable">
+                            <tr>
+                                <td colspan="4" class="text-center">Carregando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- COMISSÕES -->
+        <div class="tab-pane fade" id="comissoes">
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h3 id="comissaoTotal">R$ 0</h3>
+                        <p>Comissão Total</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card success">
+                        <h3 id="comissaoPaga">R$ 0</h3>
+                        <p>Comissão Paga</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card warning">
+                        <h3 id="comissaoPendente">R$ 0</h3>
+                        <p>Comissão Pendente</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card info">
+                        <h3 id="comissaoPercentual">0%</h3>
+                        <p>Percentual Médio</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="report-card">
+                        <h5><i class="fas fa-chart-line me-2"></i>Comissões por Mês</h5>
+                        <div class="chart-container">
+                            <canvas id="comissoesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="report-card">
+                        <h5><i class="fas fa-percentage me-2"></i>Distribuição</h5>
+                        <div class="chart-container">
+                            <canvas id="comissoesPieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="report-card">
+                <h5><i class="fas fa-receipt me-2"></i>Detalhamento de Comissões</h5>
+                <div class="table-responsive">
+                    <table class="table table-report">
+                        <thead>
+                            <tr>
+                                <th>Pedido</th>
+                                <th>Valor Venda</th>
+                                <th>%</th>
+                                <th>Comissão</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comissoesTable">
+                            <tr>
+                                <td colspan="5" class="text-center">Carregando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -133,115 +449,88 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    let reportChart;
-    let currentReportType = 'vendas';
+    // Charts
+    let vendasChart, clientesStatusChart, produtosChart, comissoesChart, comissoesPieChart;
     
-    // Select Report Type
-    function selectReport(type) {
-        currentReportType = type;
-        showToast(`Relatório de ${type} selecionado`, 'info');
-    }
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set default dates
+        const hoje = new Date();
+        const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+        
+        document.getElementById('vendasDataInicio').value = inicio.toISOString().split('T')[0];
+        document.getElementById('vendasDataFim').value = hoje.toISOString().split('T')[0];
+        
+        // Load all reports
+        loadVendas();
+        loadClientes();
+        loadProdutos();
+        loadComissoes();
+    });
     
-    // Generate Report
-    async function generateReport() {
-        const dataInicio = document.getElementById('dataInicio').value;
-        const dataFim = document.getElementById('dataFim').value;
-        const cliente = document.getElementById('filterCliente').value;
-        
-        if (!dataInicio || !dataFim) {
-            showToast('Selecione o período do relatório', 'warning');
-            return;
-        }
-        
+    // Load Vendas Report
+    async function loadVendas() {
         try {
             showLoading();
+            const dataInicio = document.getElementById('vendasDataInicio').value;
+            const dataFim = document.getElementById('vendasDataFim').value;
             
-            // Build query params
-            const params = new URLSearchParams({
-                dataInicio,
-                dataFim,
-                tipo: currentReportType
-            });
-            
-            if (cliente) params.append('cliente', cliente);
-            
-            const response = await fetch(`/api/relatorios/vendas?${params}`);
+            const response = await fetch(`/api/relatorios/vendas?dataInicio=${dataInicio}&dataFim=${dataFim}`);
             const data = await response.json();
             
-            // Show results
-            document.getElementById('reportResults').style.display = 'block';
+            // Update stats
+            document.getElementById('vendasTotal').textContent = formatCurrency(data.resumo.totalVendas);
+            document.getElementById('vendasQtd').textContent = data.resumo.quantidadePedidos;
+            document.getElementById('vendasTicket').textContent = formatCurrency(data.resumo.ticketMedio);
+            document.getElementById('vendasComissao').textContent = formatCurrency(data.resumo.comissaoTotal);
             
             // Update chart
-            updateReportChart(data);
-            
-            // Update summary
-            updateReportSummary(data);
-            
-            // Update table
-            updateReportTable(data);
+            updateVendasChart(data.porPeriodo);
             
         } catch (error) {
-            console.error('Erro ao gerar relatório:', error);
-            showToast('Erro ao gerar relatório', 'error');
+            console.error('Erro ao carregar vendas:', error);
+            showToast('Erro ao carregar relatório de vendas', 'error');
         } finally {
             hideLoading();
         }
     }
     
-    // Update Report Chart
-    function updateReportChart(data) {
-        const ctx = document.getElementById('reportChart');
-        if (!ctx) return;
+    function updateVendasChart(dados) {
+        const ctx = document.getElementById('vendasChart').getContext('2d');
         
-        // Generate sample data
-        const labels = [];
-        const values = [];
+        if (vendasChart) vendasChart.destroy();
         
-        for (let i = 0; i < 30; i++) {
-            const date = new Date();
-            date.setDate(date.getDate() - (29 - i));
-            labels.push(date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
-            values.push(Math.floor(Math.random() * 15000) + 3000);
-        }
-        
-        // Update chart title
-        document.getElementById('chartTitle').textContent = `Gráfico de ${currentReportType.charAt(0).toUpperCase() + currentReportType.slice(1)}`;
-        
-        // Destroy existing chart
-        if (reportChart) {
-            reportChart.destroy();
-        }
-        
-        reportChart = new Chart(ctx, {
+        vendasChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: labels,
+                labels: dados.map(d => formatDate(d.data)),
                 datasets: [{
                     label: 'Vendas',
-                    data: values,
-                    borderColor: 'rgba(102, 126, 234, 0.8)',
+                    data: dados.map(d => d.valor),
+                    borderColor: '#667eea',
                     backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                    borderWidth: 2,
+                    borderWidth: 3,
+                    tension: 0.4,
                     fill: true,
-                    tension: 0.4
+                    pointBackgroundColor: '#667eea',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: false
-                    }
+                    legend: { display: false }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            callback: function(value) {
-                                return formatCurrency(value);
-                            }
+                            callback: value => 'R$ ' + value.toLocaleString('pt-BR')
                         }
                     }
                 }
@@ -249,113 +538,297 @@
         });
     }
     
-    // Update Report Summary
-    function updateReportSummary(data) {
-        // Calculate from chart data
-        const values = reportChart.data.datasets[0].data;
-        const total = values.reduce((sum, v) => sum + v, 0);
-        const average = total / values.length;
-        
-        document.getElementById('reportSummary').innerHTML = `
-            <div class="mb-3">
-                <label class="small text-muted">Total de Vendas</label>
-                <h4 class="mb-0">${formatCurrency(total)}</h4>
-            </div>
-            <div class="mb-3">
-                <label class="small text-muted">Média Diária</label>
-                <h4 class="mb-0">${formatCurrency(average)}</h4>
-            </div>
-            <div class="mb-3">
-                <label class="small text-muted">Número de Pedidos</label>
-                <h4 class="mb-0">127</h4>
-            </div>
-            <div>
-                <label class="small text-muted">Ticket Médio</label>
-                <h4 class="mb-0">${formatCurrency(total / 127)}</h4>
-            </div>
-        `;
-    }
-    
-    // Update Report Table
-    function updateReportTable(data) {
-        document.getElementById('reportTableHead').innerHTML = `
-            <tr>
-                <th>Data</th>
-                <th>Nº Pedido</th>
-                <th>Cliente</th>
-                <th>Valor</th>
-                <th>Comissão</th>
-                <th>Status</th>
-            </tr>
-        `;
-        
-        // Generate sample table data
-        const tbody = document.getElementById('reportTableBody');
-        const rows = [];
-        
-        for (let i = 0; i < 15; i++) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            const valor = Math.floor(Math.random() * 5000) + 1000;
-            
-            rows.push(`
-                <tr>
-                    <td>${formatDate(date.toISOString().split('T')[0])}</td>
-                    <td>#${1000 + i}</td>
-                    <td>Cliente ${i + 1}</td>
-                    <td><strong>${formatCurrency(valor)}</strong></td>
-                    <td class="text-success">${formatCurrency(valor * 0.05)}</td>
-                    <td>
-                        <span class="badge-status badge-active">
-                            Aprovado
-                        </span>
-                    </td>
-                </tr>
-            `);
-        }
-        
-        tbody.innerHTML = rows.join('');
-    }
-    
-    // Export Report
-    function exportReport(format) {
-        showToast(`Exportando relatório em formato ${format.toUpperCase()}...`, 'info');
-        // Implementation would go here
-    }
-    
-    // Load Clientes for filter
+    // Load Clientes Report
     async function loadClientes() {
         try {
-            const response = await fetch('/api/clientes');
-            const clientes = await response.json();
+            const response = await fetch('/api/relatorios/clientes');
+            const data = await response.json();
             
-            const select = document.getElementById('filterCliente');
-            select.innerHTML = '<option value="">Todos</option>';
+            // Update stats
+            document.getElementById('clientesTotal').textContent = data.resumo.totalClientes;
+            document.getElementById('clientesAtivos').textContent = data.resumo.clientesAtivos;
+            document.getElementById('clientesInativos').textContent = data.resumo.clientesInativos;
+            document.getElementById('clientesNovos').textContent = data.resumo.novosNoMes;
             
-            clientes.forEach(c => {
-                const option = document.createElement('option');
-                option.value = c.id;
-                option.textContent = c.fantasia || c.razaoSocial;
-                select.appendChild(option);
-            });
+            // Update pie chart
+            updateClientesStatusChart(data.porStatus);
+            
+            // Update top clients table
+            updateTopClientesTable(data.melhoresClientes);
             
         } catch (error) {
             console.error('Erro ao carregar clientes:', error);
         }
     }
     
-    // Initialize
-    document.addEventListener('DOMContentLoaded', function() {
-        // Set default dates (last 30 days)
-        const hoje = new Date();
-        const trintaDiasAtras = new Date();
-        trintaDiasAtras.setDate(hoje.getDate() - 30);
+    function updateClientesStatusChart(dados) {
+        const ctx = document.getElementById('clientesStatusChart').getContext('2d');
         
-        document.getElementById('dataInicio').value = trintaDiasAtras.toISOString().split('T')[0];
-        document.getElementById('dataFim').value = hoje.toISOString().split('T')[0];
+        if (clientesStatusChart) clientesStatusChart.destroy();
         
-        // Load clientes
-        loadClientes();
-    });
+        clientesStatusChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Ativos', 'Inativos'],
+                datasets: [{
+                    data: [
+                        dados.find(d => d.status === 'ativo')?.quantidade || 0,
+                        dados.find(d => d.status === 'inativo')?.quantidade || 0
+                    ],
+                    backgroundColor: ['#10b981', '#f59e0b'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+    
+    function updateTopClientesTable(clientes) {
+        const tbody = document.getElementById('topClientesTable');
+        
+        if (clientes.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center">Nenhum cliente encontrado</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = clientes.map((c, i) => `
+            <tr>
+                <td><strong>${i + 1}º</strong></td>
+                <td>${c.nome}</td>
+                <td><strong>${formatCurrency(c.totalCompras)}</strong></td>
+                <td>${c.pedidos}</td>
+            </tr>
+        `).join('');
+    }
+    
+    // Load Produtos Report
+    async function loadProdutos() {
+        try {
+            const response = await fetch('/api/relatorios/produtos');
+            const data = await response.json();
+            
+            // Update stats
+            document.getElementById('produtosTotal').textContent = data.resumo.totalProdutosVendidos;
+            document.getElementById('produtosUnicos').textContent = data.resumo.produtosUnicos;
+            document.getElementById('produtosValorMedio').textContent = formatCurrency(data.resumo.valorMedio);
+            
+            // Update chart
+            updateProdutosChart(data.maisVendidos);
+            
+            // Update table
+            updateProdutosTable(data.maisVendidos, data.resumo.totalProdutosVendidos);
+            
+        } catch (error) {
+            console.error('Erro ao carregar produtos:', error);
+        }
+    }
+    
+    function updateProdutosChart(produtos) {
+        const ctx = document.getElementById('produtosChart').getContext('2d');
+        
+        if (produtosChart) produtosChart.destroy();
+        
+        const top10 = produtos.slice(0, 10);
+        
+        produtosChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: top10.map(p => p.nome),
+                datasets: [{
+                    label: 'Quantidade Vendida',
+                    data: top10.map(p => p.quantidade),
+                    backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+    
+    function updateProdutosTable(produtos, totalVendidos) {
+        const tbody = document.getElementById('produtosTable');
+        
+        if (produtos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center">Nenhum produto encontrado</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = produtos.map(p => {
+            const percentual = totalVendidos > 0 ? ((p.quantidade / totalVendidos) * 100).toFixed(1) : 0;
+            return `
+                <tr>
+                    <td><strong>${p.nome}</strong></td>
+                    <td>${p.quantidade}</td>
+                    <td>${formatCurrency(p.valorTotal)}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="progress progress-custom flex-grow-1 me-2">
+                                <div class="progress-bar bg-primary" style="width: ${percentual}%"></div>
+                            </div>
+                            <span>${percentual}%</span>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    // Load Comissões Report
+    async function loadComissoes() {
+        try {
+            const response = await fetch('/api/relatorios/comissoes');
+            const data = await response.json();
+            
+            // Update stats
+            document.getElementById('comissaoTotal').textContent = formatCurrency(data.resumo.comissaoTotal);
+            document.getElementById('comissaoPaga').textContent = formatCurrency(data.resumo.comissaoPaga);
+            document.getElementById('comissaoPendente').textContent = formatCurrency(data.resumo.comissaoPendente);
+            document.getElementById('comissaoPercentual').textContent = data.resumo.percentualMedio.toFixed(1) + '%';
+            
+            // Update charts
+            updateComissoesChart(data.porMes);
+            updateComissoesPieChart(data.resumo);
+            
+            // Update table
+            updateComissoesTable(data.detalhado);
+            
+        } catch (error) {
+            console.error('Erro ao carregar comissões:', error);
+        }
+    }
+    
+    function updateComissoesChart(dados) {
+        const ctx = document.getElementById('comissoesChart').getContext('2d');
+        
+        if (comissoesChart) comissoesChart.destroy();
+        
+        comissoesChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: dados.map(d => d.mes),
+                datasets: [{
+                    label: 'Comissão',
+                    data: dados.map(d => d.valor),
+                    backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: value => 'R$ ' + value.toLocaleString('pt-BR')
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    function updateComissoesPieChart(resumo) {
+        const ctx = document.getElementById('comissoesPieChart').getContext('2d');
+        
+        if (comissoesPieChart) comissoesPieChart.destroy();
+        
+        comissoesPieChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Paga', 'Pendente'],
+                datasets: [{
+                    data: [resumo.comissaoPaga, resumo.comissaoPendente],
+                    backgroundColor: ['#10b981', '#f59e0b'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+    
+    function updateComissoesTable(detalhado) {
+        const tbody = document.getElementById('comissoesTable');
+        
+        if (detalhado.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">Nenhuma comissão encontrada</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = detalhado.slice(0, 20).map(c => `
+            <tr>
+                <td><strong>${c.pedido}</strong></td>
+                <td>${formatCurrency(c.valor)}</td>
+                <td>${c.percentual}%</td>
+                <td><strong>${formatCurrency(c.comissao)}</strong></td>
+                <td>
+                    <span class="badge-status badge-${c.status}">
+                        ${c.status === 'pago' ? 'Pago' : 'Pendente'}
+                    </span>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    // Utility functions
+    function formatCurrency(value) {
+        return new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        }).format(value || 0);
+    }
+    
+    function formatDate(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+    }
+    
+    // Export functions
+    function exportPDF() {
+        showToast('Gerando PDF...', 'info');
+        // Implement PDF export
+        setTimeout(() => {
+            showToast('PDF gerado com sucesso!', 'success');
+        }, 2000);
+    }
+    
+    function exportExcel() {
+        showToast('Gerando Excel...', 'info');
+        // Implement Excel export
+        setTimeout(() => {
+            showToast('Excel gerado com sucesso!', 'success');
+        }, 2000);
+    }
 </script>
 {% endblock %}

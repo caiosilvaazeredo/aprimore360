@@ -1,245 +1,497 @@
 {% extends "base.html" %}
 
-{% block title %}Metas - Gestão Comercial{% endblock %}
-{% block page_title %}Metas e Desempenho{% endblock %}
+{% block title %}Metas - ComercialPRO{% endblock %}
 
 {% block extra_css %}
 <style>
-    .progress-circle {
-        position: relative;
-        width: 200px;
-        height: 200px;
-        margin: 0 auto;
+    .meta-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin-bottom: 25px;
+        transition: all 0.3s ease;
     }
     
-    .progress-value {
+    .meta-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .meta-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .meta-header h5 {
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0;
+    }
+    
+    .meta-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .meta-badge.on-track {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+    
+    .meta-badge.behind {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+    
+    .meta-badge.critical {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+    
+    .meta-progress {
+        margin-bottom: 20px;
+    }
+    
+    .progress-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+    
+    .progress-info span {
+        font-weight: 500;
+        color: #64748b;
+    }
+    
+    .progress-info strong {
+        color: #1e293b;
+        font-size: 1.1rem;
+    }
+    
+    .progress-bar-custom {
+        height: 12px;
+        background: #e2e8f0;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        border-radius: 6px;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        transition: width 1s ease;
+    }
+    
+    .progress-fill.success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+    
+    .progress-fill.warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+    
+    .progress-fill.danger {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    }
+    
+    .meta-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+    }
+    
+    .meta-stat {
+        text-align: center;
+        padding: 15px;
+        background: #f8fafc;
+        border-radius: 10px;
+    }
+    
+    .meta-stat h4 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 5px;
+    }
+    
+    .meta-stat p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+    
+    .empresa-card {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        border-radius: 15px;
+        padding: 30px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .empresa-card::before {
+        content: '';
         position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #667eea;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+    }
+    
+    .empresa-card h4 {
+        font-weight: 700;
+        margin-bottom: 20px;
+        position: relative;
+    }
+    
+    .empresa-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        position: relative;
+    }
+    
+    .empresa-stat {
+        text-align: center;
+    }
+    
+    .empresa-stat h3 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .empresa-stat p {
+        margin: 0;
+        opacity: 0.9;
+    }
+    
+    .privacy-notice {
+        background: rgba(102, 126, 234, 0.1);
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .privacy-notice i {
+        color: var(--primary);
+        font-size: 1.5rem;
+    }
+    
+    .privacy-notice p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #475569;
+    }
+    
+    .ranking-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    
+    .ranking-card h5 {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 20px;
+    }
+    
+    .ranking-item {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        background: #f8fafc;
+        transition: all 0.3s ease;
+    }
+    
+    .ranking-item:hover {
+        background: rgba(102, 126, 234, 0.1);
+    }
+    
+    .ranking-item.current-user {
+        background: rgba(102, 126, 234, 0.15);
+        border: 2px solid var(--primary);
     }
     
     .ranking-position {
-        width: 80px;
-        height: 80px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 2rem;
-        font-weight: bold;
-        color: white;
+        font-weight: 700;
+        margin-right: 15px;
+        flex-shrink: 0;
     }
     
     .ranking-position.gold {
-        background: linear-gradient(135deg, #FFD700, #FFA500);
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        color: white;
     }
     
     .ranking-position.silver {
-        background: linear-gradient(135deg, #C0C0C0, #A8A8A8);
+        background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+        color: white;
     }
     
     .ranking-position.bronze {
-        background: linear-gradient(135deg, #CD7F32, #A0522D);
+        background: linear-gradient(135deg, #d97706 0%, #92400e 100%);
+        color: white;
     }
     
-    .ranking-card {
-        padding: 15px;
-        background: #f8f9fa;
-        border-radius: 10px;
-        margin-bottom: 10px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
+    .ranking-position.default {
+        background: #e2e8f0;
+        color: #64748b;
     }
     
-    .ranking-card.highlight {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-        border: 2px solid #667eea;
-    }
-    
-    .ranking-card .position {
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: #667eea;
-        min-width: 40px;
-    }
-    
-    .ranking-card .info {
+    .ranking-info {
         flex: 1;
     }
     
-    .ranking-card .value {
-        font-weight: bold;
-        color: #667eea;
+    .ranking-info h6 {
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0 0 3px 0;
+    }
+    
+    .ranking-info p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+    
+    .ranking-value {
+        font-weight: 700;
+        color: var(--primary);
+        font-size: 1.1rem;
+    }
+    
+    .empty-ranking {
+        text-align: center;
+        padding: 40px 20px;
+        color: #64748b;
+    }
+    
+    .empty-ranking i {
+        font-size: 3rem;
+        color: #cbd5e1;
+        margin-bottom: 15px;
+    }
+    
+    .add-meta-btn {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        border: none;
+        border-radius: 12px;
+        padding: 15px;
+        color: white;
+        font-weight: 600;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+    }
+    
+    .add-meta-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .privacy-toggle {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin-bottom: 25px;
+    }
+    
+    .privacy-toggle h6 {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 15px;
+    }
+    
+    .toggle-option {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px;
+        background: #f8fafc;
+        border-radius: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .toggle-option label {
+        font-weight: 500;
+        color: #475569;
+        margin: 0;
+    }
+    
+    .form-switch .form-check-input {
+        width: 3em;
+        height: 1.5em;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Header Actions -->
+<div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <select class="form-select" id="mesSelect" onchange="loadMetas()">
-                <option value="">Mês Atual</option>
-            </select>
+            <h2 class="mb-1">Minhas Metas</h2>
+            <p class="text-muted mb-0">Acompanhe seu desempenho e conquiste seus objetivos</p>
         </div>
-        <div>
-            <button class="btn btn-outline-primary" onclick="openGoalModal()">
-                <i class="fas fa-edit"></i> Editar Meta
-            </button>
-            <button class="btn btn-gradient" onclick="exportReport()">
-                <i class="fas fa-download"></i> Exportar Relatório
-            </button>
-        </div>
+        <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#addMetaModal">
+            <i class="fas fa-plus me-2"></i>Nova Meta
+        </button>
     </div>
     
-    <!-- Main Goal Progress -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="stat-card text-center">
-                <h5 class="mb-3">Meta do Mês</h5>
-                <div class="progress-circle">
-                    <canvas id="progressChart" width="200" height="200"></canvas>
-                    <div class="progress-value" id="progressValue">0%</div>
-                </div>
-                <div class="mt-3">
-                    <h4 class="mb-1" id="valorRealizado">R$ 0</h4>
-                    <p class="text-muted mb-0">de <strong id="valorMeta">R$ 0</strong></p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="stat-card">
-                <h5 class="mb-3">Projeção</h5>
-                <div class="mb-3">
-                    <label class="small text-muted">Dias Restantes</label>
-                    <h3 class="mb-0" id="diasRestantes">0</h3>
-                </div>
-                <div class="mb-3">
-                    <label class="small text-muted">Meta Diária Necessária</label>
-                    <h3 class="mb-0 text-warning" id="metaDiaria">R$ 0</h3>
-                </div>
-                <div>
-                    <label class="small text-muted">Projeção Final</label>
-                    <h3 class="mb-0 text-success" id="projecaoFinal">R$ 0</h3>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="stat-card">
-                <h5 class="mb-3">Sua Posição</h5>
-                <div class="text-center mb-3">
-                    <div class="ranking-position gold mx-auto mb-3" id="userRanking">
-                        1°
-                    </div>
-                    <h4 id="userName">Você</h4>
-                    <p class="text-muted mb-0">Entre <span id="totalVendedores">12</span> vendedores</p>
-                </div>
-                <div class="progress" style="height: 10px;">
-                    <div class="progress-bar" id="rankingProgress" style="width: 100%; background: linear-gradient(135deg, #FFD700, #FFA500);"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Detailed Metrics -->
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <div class="stat-card">
-                <h5 class="mb-3">Evolução Diária</h5>
-                <div style="position: relative; height: 300px;">
-                    <canvas id="dailyChart"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="stat-card">
-                <h5 class="mb-3">Métricas Detalhadas</h5>
-                <table class="table table-sm">
-                    <tbody>
-                        <tr>
-                            <td>Ticket Médio</td>
-                            <td class="text-end"><strong id="ticketMedio">R$ 0</strong></td>
-                        </tr>
-                        <tr>
-                            <td>Nº de Pedidos</td>
-                            <td class="text-end"><strong id="numeroPedidos">0</strong></td>
-                        </tr>
-                        <tr>
-                            <td>Taxa de Conversão</td>
-                            <td class="text-end"><strong id="taxaConversao">0%</strong></td>
-                        </tr>
-                        <tr>
-                            <td>Clientes Ativos</td>
-                            <td class="text-end"><strong id="clientesAtivos">0</strong></td>
-                        </tr>
-                        <tr>
-                            <td>Produtos Vendidos</td>
-                            <td class="text-end"><strong id="produtosVendidos">0</strong></td>
-                        </tr>
-                        <tr>
-                            <td>Comissão Estimada</td>
-                            <td class="text-end"><strong class="text-success" id="comissaoEstimada">R$ 0</strong></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Ranking -->
     <div class="row">
-        <div class="col-md-6">
-            <div class="stat-card">
-                <h5 class="mb-3">Ranking de Vendedores</h5>
-                <div id="rankingList">
-                    <!-- Ranking will be loaded here -->
+        <div class="col-lg-8">
+            <!-- Metas Pessoais -->
+            <div id="metasPessoais">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Meta da Empresa -->
+            <div class="empresa-card">
+                <h4><i class="fas fa-building me-2"></i>Meta da Empresa</h4>
+                <div class="empresa-stats">
+                    <div class="empresa-stat">
+                        <h3 id="empresaMeta">R$ 0</h3>
+                        <p>Meta Mensal</p>
+                    </div>
+                    <div class="empresa-stat">
+                        <h3 id="empresaRealizado">R$ 0</h3>
+                        <p>Realizado</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="progress-bar-custom">
+                        <div class="progress-fill" id="empresaProgress" style="width: 0%"></div>
+                    </div>
+                    <div class="text-center mt-2">
+                        <span id="empresaPercentual">0%</span> concluído
+                    </div>
                 </div>
             </div>
         </div>
         
-        <div class="col-md-6">
-            <div class="stat-card">
-                <h5 class="mb-3">Metas por Categoria</h5>
-                <div style="position: relative; height: 300px;">
-                    <canvas id="categoryChart"></canvas>
+        <div class="col-lg-4">
+            <!-- Privacidade -->
+            <div class="privacy-toggle">
+                <h6><i class="fas fa-shield-alt me-2"></i>Configurações de Privacidade</h6>
+                <div class="toggle-option">
+                    <label>Aparecer no Ranking</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="showInRanking" onchange="updatePrivacy()">
+                    </div>
+                </div>
+                <small class="text-muted d-block mt-2">
+                    Quando desativado, seus dados de vendas não serão visíveis para outros vendedores da empresa.
+                </small>
+            </div>
+            
+            <!-- Ranking -->
+            <div class="ranking-card">
+                <h5><i class="fas fa-trophy me-2"></i>Ranking da Empresa</h5>
+                <div id="rankingList">
+                    <div class="text-center py-3">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    </div>
+                </div>
+                
+                <div class="privacy-notice">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Apenas vendedores que optaram por aparecer no ranking são exibidos. Seus dados são privados por padrão.</p>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Goal Modal -->
-<div class="modal fade" id="goalModal" tabindex="-1">
+<!-- Add Meta Modal -->
+<div class="modal fade" id="addMetaModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Definir Meta Mensal</h5>
+                <h5 class="modal-title">Nova Meta Pessoal</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="goalForm">
+                <form id="metaForm">
                     <div class="mb-3">
-                        <label class="form-label">Valor da Meta (R$)</label>
-                        <input type="number" class="form-control" id="goalValue" step="0.01" required>
+                        <label class="form-label">Tipo de Meta</label>
+                        <select class="form-select" id="metaTipo" required>
+                            <option value="">Selecione...</option>
+                            <option value="vendas">Vendas (R$)</option>
+                            <option value="clientes">Novos Clientes</option>
+                            <option value="visitas">Visitas</option>
+                            <option value="pedidos">Número de Pedidos</option>
+                        </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Mês/Ano</label>
-                        <input type="month" class="form-control" id="goalMonth" required>
+                        <label class="form-label">Valor da Meta</label>
+                        <input type="number" class="form-control" id="metaValor" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Período</label>
+                        <select class="form-select" id="metaPeriodo" required>
+                            <option value="mensal">Mensal</option>
+                            <option value="trimestral">Trimestral</option>
+                            <option value="anual">Anual</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Mês</label>
+                            <select class="form-select" id="metaMes">
+                                <option value="1">Janeiro</option>
+                                <option value="2">Fevereiro</option>
+                                <option value="3">Março</option>
+                                <option value="4">Abril</option>
+                                <option value="5">Maio</option>
+                                <option value="6">Junho</option>
+                                <option value="7">Julho</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Setembro</option>
+                                <option value="10">Outubro</option>
+                                <option value="11">Novembro</option>
+                                <option value="12">Dezembro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Ano</label>
+                            <input type="number" class="form-control" id="metaAno" value="2025">
+                        </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-gradient" onclick="saveGoal()">Salvar Meta</button>
+                <button type="button" class="btn btn-gradient" onclick="saveMeta()">
+                    <i class="fas fa-save me-2"></i>Salvar Meta
+                </button>
             </div>
         </div>
     </div>
@@ -248,251 +500,216 @@
 
 {% block extra_js %}
 <script>
-    let progressChart;
-    let dailyChart;
-    let categoryChart;
+    // Load data on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadMetas();
+        loadRanking();
+        loadPrivacySettings();
+        
+        // Set current month
+        const now = new Date();
+        document.getElementById('metaMes').value = now.getMonth() + 1;
+        document.getElementById('metaAno').value = now.getFullYear();
+    });
     
-    // Load Metas
+    // Load metas
     async function loadMetas() {
         try {
-            showLoading();
-            
             const response = await fetch('/api/metas');
             const data = await response.json();
             
-            // Update values
-            document.getElementById('progressValue').textContent = `${data.percentual.toFixed(1)}%`;
-            document.getElementById('valorRealizado').textContent = formatCurrency(data.realizado);
-            document.getElementById('valorMeta').textContent = formatCurrency(data.metaMensal);
-            document.getElementById('diasRestantes').textContent = data.diasRestantes;
-            document.getElementById('metaDiaria').textContent = formatCurrency(data.metaDiaria);
-            document.getElementById('projecaoFinal').textContent = formatCurrency(data.realizado + (data.metaDiaria * data.diasRestantes));
-            
-            // Update ranking
-            document.getElementById('userRanking').textContent = `${data.ranking}°`;
-            document.getElementById('totalVendedores').textContent = data.totalVendedores;
-            
-            // Update detailed metrics
-            document.getElementById('ticketMedio').textContent = formatCurrency(data.ticketMedio || 1500);
-            document.getElementById('numeroPedidos').textContent = data.numeroPedidos || 83;
-            document.getElementById('taxaConversao').textContent = `${data.taxaConversao || 68}%`;
-            document.getElementById('clientesAtivos').textContent = data.clientesAtivos || 45;
-            document.getElementById('produtosVendidos').textContent = data.produtosVendidos || 256;
-            document.getElementById('comissaoEstimada').textContent = formatCurrency(data.realizado * 0.05);
-            
-            // Update charts
-            updateProgressChart(data.percentual);
-            updateDailyChart();
-            updateCategoryChart();
-            loadRanking();
+            renderMetasPessoais(data.pessoais);
+            renderEmpresaMeta(data.empresa);
             
         } catch (error) {
             console.error('Erro ao carregar metas:', error);
-        } finally {
-            hideLoading();
+            showToast('Erro ao carregar metas', 'error');
         }
     }
     
-    // Update Progress Chart
-    function updateProgressChart(percentage) {
-        const ctx = document.getElementById('progressChart');
-        if (!ctx) return;
+    // Render metas pessoais
+    function renderMetasPessoais(metas) {
+        const container = document.getElementById('metasPessoais');
         
-        if (progressChart) progressChart.destroy();
-        
-        progressChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                datasets: [{
-                    data: [percentage, 100 - percentage],
-                    backgroundColor: [
-                        'rgba(102, 126, 234, 0.8)',
-                        'rgba(229, 231, 235, 0.3)'
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: false,
-                cutout: '75%',
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        enabled: false
-                    }
-                }
-            }
-        });
-    }
-    
-    // Update Daily Chart
-    function updateDailyChart() {
-        const ctx = document.getElementById('dailyChart');
-        if (!ctx) return;
-        
-        // Generate sample data for current month
-        const days = [];
-        const values = [];
-        const accumulated = [];
-        let acc = 0;
-        
-        for (let i = 1; i <= 30; i++) {
-            days.push(`Dia ${i}`);
-            const dayValue = Math.random() * 10000 + 2000;
-            values.push(dayValue);
-            acc += dayValue;
-            accumulated.push(acc);
+        if (!metas || metas.length === 0) {
+            container.innerHTML = `
+                <div class="meta-card text-center">
+                    <i class="fas fa-bullseye" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 20px;"></i>
+                    <h5>Nenhuma meta definida</h5>
+                    <p class="text-muted">Crie suas metas pessoais para acompanhar seu progresso</p>
+                    <button class="btn btn-gradient mt-3" data-bs-toggle="modal" data-bs-target="#addMetaModal">
+                        <i class="fas fa-plus me-2"></i>Criar Primeira Meta
+                    </button>
+                </div>
+            `;
+            return;
         }
         
-        if (dailyChart) dailyChart.destroy();
-        
-        dailyChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: days,
-                datasets: [{
-                    label: 'Vendas Diárias',
-                    data: values,
-                    borderColor: 'rgba(102, 126, 234, 0.8)',
-                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    yAxisID: 'y'
-                }, {
-                    label: 'Acumulado',
-                    data: accumulated,
-                    borderColor: 'rgba(16, 185, 129, 0.8)',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    yAxisID: 'y1'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false
-                },
-                scales: {
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        ticks: {
-                            callback: function(value) {
-                                return formatCurrency(value);
-                            }
-                        }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        grid: {
-                            drawOnChartArea: false
-                        },
-                        ticks: {
-                            callback: function(value) {
-                                return formatCurrency(value);
-                            }
-                        }
-                    }
-                }
+        container.innerHTML = metas.map(meta => {
+            const percentual = meta.percentual || 0;
+            let statusClass = 'on-track';
+            let progressClass = '';
+            
+            if (percentual < 50) {
+                statusClass = 'critical';
+                progressClass = 'danger';
+            } else if (percentual < 80) {
+                statusClass = 'behind';
+                progressClass = 'warning';
+            } else {
+                progressClass = 'success';
             }
-        });
-    }
-    
-    // Update Category Chart
-    function updateCategoryChart() {
-        const ctx = document.getElementById('categoryChart');
-        if (!ctx) return;
-        
-        if (categoryChart) categoryChart.destroy();
-        
-        categoryChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Vestuário', 'Acessórios', 'Calçados', 'Bolsas', 'Outros'],
-                datasets: [{
-                    label: 'Meta',
-                    data: [50000, 30000, 25000, 35000, 10000],
-                    backgroundColor: 'rgba(229, 231, 235, 0.5)',
-                    borderColor: 'rgba(229, 231, 235, 1)',
-                    borderWidth: 1
-                }, {
-                    label: 'Realizado',
-                    data: [45000, 32000, 18000, 28000, 12000],
-                    backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                    borderColor: 'rgba(102, 126, 234, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return formatCurrency(value);
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-    
-    // Load Ranking
-    function loadRanking() {
-        const rankings = [
-            { position: 1, name: 'João Silva', value: 185000, percentage: 123 },
-            { position: 2, name: 'Maria Santos', value: 165000, percentage: 110 },
-            { position: 3, name: 'Você', value: 125000, percentage: 83, isUser: true },
-            { position: 4, name: 'Pedro Costa', value: 118000, percentage: 78 },
-            { position: 5, name: 'Ana Lima', value: 98000, percentage: 65 }
-        ];
-        
-        const container = document.getElementById('rankingList');
-        container.innerHTML = rankings.map(r => {
-            const positionClass = r.position === 1 ? 'gold' : r.position === 2 ? 'silver' : r.position === 3 ? 'bronze' : 'bg-light';
+            
+            const statusText = percentual >= 80 ? 'No caminho' : percentual >= 50 ? 'Atenção' : 'Crítico';
             
             return `
-                <div class="ranking-card ${r.isUser ? 'highlight' : ''}">
-                    <div class="position">${r.position}°</div>
-                    <div class="info">
-                        <strong>${r.name}</strong><br>
-                        <small class="text-muted">${r.percentage}% da meta</small>
+                <div class="meta-card">
+                    <div class="meta-header">
+                        <h5><i class="fas fa-${getMetaIcon(meta.tipo)} me-2"></i>${getMetaLabel(meta.tipo)}</h5>
+                        <span class="meta-badge ${statusClass}">${statusText}</span>
                     </div>
-                    <div class="value">${formatCurrency(r.value)}</div>
+                    
+                    <div class="meta-progress">
+                        <div class="progress-info">
+                            <span>Progresso</span>
+                            <strong>${percentual.toFixed(1)}%</strong>
+                        </div>
+                        <div class="progress-bar-custom">
+                            <div class="progress-fill ${progressClass}" style="width: ${Math.min(percentual, 100)}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="meta-stats">
+                        <div class="meta-stat">
+                            <h4>${formatMetaValue(meta.valor, meta.tipo)}</h4>
+                            <p>Meta</p>
+                        </div>
+                        <div class="meta-stat">
+                            <h4>${formatMetaValue(meta.realizado || 0, meta.tipo)}</h4>
+                            <p>Realizado</p>
+                        </div>
+                        <div class="meta-stat">
+                            <h4>${formatMetaValue(Math.max(0, meta.valor - (meta.realizado || 0)), meta.tipo)}</h4>
+                            <p>Faltam</p>
+                        </div>
+                    </div>
                 </div>
             `;
         }).join('');
     }
     
-    // Open Goal Modal
-    function openGoalModal() {
-        const now = new Date();
-        document.getElementById('goalMonth').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        new bootstrap.Modal(document.getElementById('goalModal')).show();
+    // Render empresa meta
+    function renderEmpresaMeta(empresa) {
+        if (!empresa) return;
+        
+        document.getElementById('empresaMeta').textContent = formatCurrency(empresa.metaMensal);
+        document.getElementById('empresaRealizado').textContent = formatCurrency(empresa.realizado);
+        document.getElementById('empresaProgress').style.width = Math.min(empresa.percentual, 100) + '%';
+        document.getElementById('empresaPercentual').textContent = empresa.percentual.toFixed(1) + '%';
     }
     
-    // Save Goal
-    async function saveGoal() {
-        const form = document.getElementById('goalForm');
+    // Load ranking
+    async function loadRanking() {
+        try {
+            const response = await fetch('/api/metas/ranking');
+            const ranking = await response.json();
+            
+            renderRanking(ranking);
+            
+        } catch (error) {
+            console.error('Erro ao carregar ranking:', error);
+        }
+    }
+    
+    // Render ranking
+    function renderRanking(ranking) {
+        const container = document.getElementById('rankingList');
+        
+        if (!ranking || ranking.length === 0) {
+            container.innerHTML = `
+                <div class="empty-ranking">
+                    <i class="fas fa-user-shield"></i>
+                    <p>Nenhum vendedor optou por aparecer no ranking ainda.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = ranking.map(item => {
+            let positionClass = 'default';
+            if (item.posicao === 1) positionClass = 'gold';
+            else if (item.posicao === 2) positionClass = 'silver';
+            else if (item.posicao === 3) positionClass = 'bronze';
+            
+            return `
+                <div class="ranking-item ${item.isCurrentUser ? 'current-user' : ''}">
+                    <div class="ranking-position ${positionClass}">
+                        ${item.posicao}º
+                    </div>
+                    <div class="ranking-info">
+                        <h6>${item.nome} ${item.isCurrentUser ? '(Você)' : ''}</h6>
+                        <p>${item.cargo}</p>
+                    </div>
+                    <div class="ranking-value">
+                        ${formatCurrency(item.vendas)}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    // Load privacy settings
+    async function loadPrivacySettings() {
+        try {
+            const response = await fetch('/api/usuario/perfil');
+            const user = await response.json();
+            
+            const showInRanking = !user.configuracoes?.privacidadeRanking;
+            document.getElementById('showInRanking').checked = showInRanking;
+            
+        } catch (error) {
+            console.error('Erro ao carregar configurações:', error);
+        }
+    }
+    
+    // Update privacy settings
+    async function updatePrivacy() {
+        const showInRanking = document.getElementById('showInRanking').checked;
+        
+        try {
+            await fetch('/api/usuario/perfil', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    configuracoes: {
+                        privacidadeRanking: !showInRanking
+                    }
+                })
+            });
+            
+            showToast(showInRanking ? 'Você agora aparece no ranking' : 'Seus dados foram ocultados do ranking', 'success');
+            loadRanking();
+            
+        } catch (error) {
+            console.error('Erro ao atualizar privacidade:', error);
+            showToast('Erro ao atualizar configurações', 'error');
+        }
+    }
+    
+    // Save new meta
+    async function saveMeta() {
+        const form = document.getElementById('metaForm');
         if (!form.checkValidity()) {
             form.reportValidity();
             return;
         }
         
-        const goalData = {
-            valor: parseFloat(document.getElementById('goalValue').value),
-            mes: document.getElementById('goalMonth').value
+        const metaData = {
+            tipo: document.getElementById('metaTipo').value,
+            valor: parseFloat(document.getElementById('metaValor').value),
+            periodo: document.getElementById('metaPeriodo').value,
+            mes: parseInt(document.getElementById('metaMes').value),
+            ano: parseInt(document.getElementById('metaAno').value)
         };
         
         try {
@@ -501,42 +718,58 @@
             const response = await fetch('/api/metas', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(goalData)
+                body: JSON.stringify(metaData)
             });
             
-            if (!response.ok) throw new Error('Erro ao salvar meta');
+            if (!response.ok) throw new Error('Erro ao criar meta');
             
-            showToast('Meta definida com sucesso!', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('goalModal')).hide();
+            showToast('Meta criada com sucesso!', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('addMetaModal')).hide();
+            form.reset();
             loadMetas();
             
         } catch (error) {
             console.error('Erro ao salvar meta:', error);
-            showToast('Erro ao salvar meta', 'error');
+            showToast('Erro ao criar meta', 'error');
         } finally {
             hideLoading();
         }
     }
     
-    // Export Report
-    function exportReport() {
-        showToast('Funcionalidade em desenvolvimento', 'info');
+    // Helper functions
+    function getMetaIcon(tipo) {
+        const icons = {
+            vendas: 'dollar-sign',
+            clientes: 'users',
+            visitas: 'map-marker-alt',
+            pedidos: 'shopping-cart'
+        };
+        return icons[tipo] || 'bullseye';
     }
     
-    // Initialize
-    document.addEventListener('DOMContentLoaded', function() {
-        loadMetas();
-        
-        // Populate month selector
-        const select = document.getElementById('mesSelect');
-        const now = new Date();
-        for (let i = 0; i < 12; i++) {
-            const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-            const option = document.createElement('option');
-            option.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            option.textContent = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-            if (i > 0) select.appendChild(option);
+    function getMetaLabel(tipo) {
+        const labels = {
+            vendas: 'Meta de Vendas',
+            clientes: 'Meta de Novos Clientes',
+            visitas: 'Meta de Visitas',
+            pedidos: 'Meta de Pedidos'
+        };
+        return labels[tipo] || 'Meta';
+    }
+    
+    function formatMetaValue(value, tipo) {
+        if (tipo === 'vendas') {
+            return formatCurrency(value);
         }
-    });
+        return value.toLocaleString('pt-BR');
+    }
+    
+    function formatCurrency(value) {
+        return new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+            maximumFractionDigits: 0
+        }).format(value || 0);
+    }
 </script>
 {% endblock %}

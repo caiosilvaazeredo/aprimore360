@@ -1,247 +1,359 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - Gestão Comercial{% endblock %}
-{% block page_title %}Dashboard{% endblock %}
+{% block title %}Dashboard - ComercialPRO{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Stats Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3 mb-3">
+<div class="dashboard-content">
+    <!-- Header Stats -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
             <div class="stat-card">
-                <div class="icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                     <i class="fas fa-dollar-sign"></i>
                 </div>
-                <div class="value" id="totalVendas">R$ 0</div>
-                <div class="label">Vendas do Mês</div>
-                <div class="change positive">
-                    <i class="fas fa-arrow-up"></i> <span id="vendaChange">0%</span>
+                <div class="stat-info">
+                    <h3 id="vendasMes">R$ 0</h3>
+                    <p>Vendas do Mês</p>
+                    <span class="stat-badge positive" id="crescimentoVendas">
+                        <i class="fas fa-arrow-up"></i> 0%
+                    </span>
                 </div>
             </div>
         </div>
         
-        <div class="col-md-3 mb-3">
+        <div class="col-xl-3 col-md-6">
             <div class="stat-card">
-                <div class="icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
                     <i class="fas fa-users"></i>
                 </div>
-                <div class="value" id="totalClientes">0</div>
-                <div class="label">Clientes Ativos</div>
-                <div class="change positive">
-                    <i class="fas fa-plus"></i> <span id="clientesNovos">0</span> novos
+                <div class="stat-info">
+                    <h3 id="totalClientes">0</h3>
+                    <p>Total de Clientes</p>
+                    <span class="stat-badge positive" id="clientesNovos">
+                        <i class="fas fa-plus"></i> 0 novos
+                    </span>
                 </div>
             </div>
         </div>
         
-        <div class="col-md-3 mb-3">
+        <div class="col-xl-3 col-md-6">
             <div class="stat-card">
-                <div class="icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
                     <i class="fas fa-calendar-check"></i>
                 </div>
-                <div class="value" id="compromissosHoje">0</div>
-                <div class="label">Compromissos Hoje</div>
-                <div class="mt-2">
-                    <small class="text-muted">Semana: <span id="compromissosSemana">0</span></small>
+                <div class="stat-info">
+                    <h3 id="compromissosHoje">0</h3>
+                    <p>Compromissos Hoje</p>
+                    <span class="stat-badge info" id="compromissosPendentes">
+                        <i class="fas fa-clock"></i> 0 pendentes
+                    </span>
                 </div>
             </div>
         </div>
         
-        <div class="col-md-3 mb-3">
+        <div class="col-xl-3 col-md-6">
             <div class="stat-card">
-                <div class="icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white;">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
                     <i class="fas fa-bullseye"></i>
                 </div>
-                <div class="value" id="metaPercentual">0%</div>
-                <div class="label">Meta Atingida</div>
-                <div class="progress mt-2" style="height: 6px;">
-                    <div class="progress-bar" id="metaProgress" style="width: 0%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                <div class="stat-info">
+                    <h3 id="percentualMeta">0%</h3>
+                    <p>Meta do Mês</p>
+                    <div class="progress mt-2" style="height: 6px;">
+                        <div class="progress-bar" id="progressoMeta" style="width: 0%;"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     
     <!-- Charts Row -->
-    <div class="row mb-4">
-        <!-- Vendas Chart -->
-        <div class="col-md-8 mb-3">
-            <div class="stat-card">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0">Vendas dos Últimos 30 Dias</h5>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary active" onclick="updateChart('daily')">Diário</button>
-                        <button class="btn btn-outline-primary" onclick="updateChart('weekly')">Semanal</button>
-                        <button class="btn btn-outline-primary" onclick="updateChart('monthly')">Mensal</button>
-                    </div>
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card-custom">
+                <div class="card-header-custom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Vendas nos Últimos 6 Meses
+                    </h5>
                 </div>
-                <div style="position: relative; height: 300px;">
-                    <canvas id="salesChart"></canvas>
+                <div class="card-body">
+                    <canvas id="vendasChart" height="300"></canvas>
                 </div>
             </div>
         </div>
         
-        <!-- Top Produtos -->
-        <div class="col-md-4 mb-3">
-            <div class="stat-card">
-                <h5 class="mb-3">Produtos Mais Vendidos</h5>
-                <div id="topProducts">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <strong>Produto A</strong><br>
-                            <small class="text-muted">150 unidades</small>
-                        </div>
-                        <span class="badge bg-success">R$ 15.000</span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <strong>Produto B</strong><br>
-                            <small class="text-muted">120 unidades</small>
-                        </div>
-                        <span class="badge bg-success">R$ 12.000</span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <strong>Produto C</strong><br>
-                            <small class="text-muted">95 unidades</small>
-                        </div>
-                        <span class="badge bg-success">R$ 9.500</span>
-                    </div>
+        <div class="col-lg-4">
+            <div class="card-custom">
+                <div class="card-header-custom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Status dos Clientes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="clientesChart" height="260"></canvas>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Tables Row -->
-    <div class="row">
-        <!-- Próximos Compromissos -->
-        <div class="col-md-6 mb-3">
-            <div class="custom-table">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0">Próximos Compromissos</h5>
-                    <a href="{{ url_for('agenda_page') }}" class="btn btn-sm btn-gradient">
-                        <i class="fas fa-plus"></i> Novo
-                    </a>
+    <!-- Bottom Row -->
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card-custom">
+                <div class="card-header-custom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock me-2"></i>
+                        Próximos Compromissos
+                    </h5>
+                    <a href="/agenda" class="btn btn-sm btn-outline-primary">Ver todos</a>
                 </div>
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Data/Hora</th>
-                                <th>Cliente</th>
-                                <th>Tipo</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="compromissosTable">
-                            <tr>
-                                <td colspan="4" class="text-center">Carregando...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="card-body" id="proximosCompromissos">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                        <p class="mt-2">Carregando...</p>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <!-- Últimas Vendas -->
-        <div class="col-md-6 mb-3">
-            <div class="custom-table">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0">Últimas Vendas</h5>
-                    <a href="{{ url_for('pedidos_page') }}" class="btn btn-sm btn-gradient">
-                        <i class="fas fa-shopping-cart"></i> Nova Venda
-                    </a>
+        <div class="col-lg-6">
+            <div class="card-custom">
+                <div class="card-header-custom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-shopping-cart me-2"></i>
+                        Últimos Pedidos
+                    </h5>
+                    <a href="/pedidos" class="btn btn-sm btn-outline-primary">Ver todos</a>
                 </div>
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Cliente</th>
-                                <th>Valor</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="vendasTable">
-                            <tr>
-                                <td colspan="4" class="text-center">Carregando...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="card-body" id="ultimosPedidos">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                        <p class="mt-2">Carregando...</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    let salesChart;
+<style>
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    }
     
-    // Load Dashboard Data
-    async function loadDashboard() {
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 20px;
+        color: white;
+        font-size: 1.5rem;
+    }
+    
+    .stat-info h3 {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #1e293b;
+    }
+    
+    .stat-info p {
+        margin: 5px 0 0;
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+    
+    .stat-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-top: 8px;
+    }
+    
+    .stat-badge.positive {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+    
+    .stat-badge.negative {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+    
+    .stat-badge.info {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+    
+    .card-custom {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+    
+    .card-header-custom {
+        padding: 20px 25px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .card-header-custom h5 {
+        color: #1e293b;
+        font-weight: 600;
+    }
+    
+    .compromisso-item, .pedido-item {
+        display: flex;
+        align-items: center;
+        padding: 15px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .compromisso-item:last-child, .pedido-item:last-child {
+        border-bottom: none;
+    }
+    
+    .compromisso-icon, .pedido-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        font-size: 1.1rem;
+    }
+    
+    .compromisso-info, .pedido-info {
+        flex: 1;
+    }
+    
+    .compromisso-info h6, .pedido-info h6 {
+        margin: 0;
+        font-weight: 600;
+        color: #1e293b;
+    }
+    
+    .compromisso-info p, .pedido-info p {
+        margin: 3px 0 0;
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+    
+    .compromisso-time, .pedido-value {
+        text-align: right;
+    }
+    
+    .compromisso-time span, .pedido-value span {
+        display: block;
+        font-weight: 600;
+        color: #667eea;
+    }
+    
+    .compromisso-time small, .pedido-value small {
+        color: #94a3b8;
+        font-size: 0.8rem;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let vendasChart, clientesChart;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDashboardStats();
+        loadProximosCompromissos();
+        loadUltimosPedidos();
+        initCharts();
+    });
+    
+    async function loadDashboardStats() {
         try {
-            showLoading();
-            
-            // Load stats
             const response = await fetch('/api/dashboard/stats');
             const data = await response.json();
             
-            // Update stats cards
-            document.getElementById('totalVendas').textContent = formatCurrency(data.vendas.mes);
-            document.getElementById('vendaChange').textContent = `${data.vendas.crescimento}%`;
-            document.getElementById('totalClientes').textContent = data.clientes.ativos;
-            document.getElementById('clientesNovos').textContent = data.clientes.novos;
+            // Vendas
+            document.getElementById('vendasMes').textContent = 
+                `R$ ${data.vendas.mes.toLocaleString('pt-BR')}`;
+            document.getElementById('crescimentoVendas').innerHTML = 
+                `<i class="fas fa-arrow-up"></i> ${data.vendas.crescimento}%`;
+            
+            // Meta
+            document.getElementById('percentualMeta').textContent = 
+                `${data.vendas.percentual.toFixed(1)}%`;
+            document.getElementById('progressoMeta').style.width = 
+                `${Math.min(data.vendas.percentual, 100)}%`;
+            
+            // Clientes
+            document.getElementById('totalClientes').textContent = data.clientes.total;
+            document.getElementById('clientesNovos').innerHTML = 
+                `<i class="fas fa-plus"></i> ${data.clientes.novos} novos`;
+            
+            // Compromissos
             document.getElementById('compromissosHoje').textContent = data.compromissos.hoje;
-            document.getElementById('compromissosSemana').textContent = data.compromissos.semana;
-            document.getElementById('metaPercentual').textContent = `${data.vendas.percentual.toFixed(1)}%`;
-            document.getElementById('metaProgress').style.width = `${data.vendas.percentual}%`;
+            document.getElementById('compromissosPendentes').innerHTML = 
+                `<i class="fas fa-clock"></i> ${data.compromissos.pendentes} pendentes`;
             
-            // Load compromissos
-            loadCompromissos();
-            
-            // Load vendas
-            loadVendas();
-            
-            // Initialize chart
-            initSalesChart();
+            // Atualiza gráfico de clientes
+            updateClientesChart(data.clientes);
             
         } catch (error) {
-            console.error('Erro ao carregar dashboard:', error);
-        } finally {
-            hideLoading();
+            console.error('Erro ao carregar stats:', error);
         }
     }
     
-    // Load Compromissos
-    async function loadCompromissos() {
+    async function loadProximosCompromissos() {
         try {
             const response = await fetch('/api/compromissos?limit=5');
             const compromissos = await response.json();
             
-            const tbody = document.getElementById('compromissosTable');
+            const container = document.getElementById('proximosCompromissos');
             
             if (compromissos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center">Nenhum compromisso agendado</td></tr>';
+                container.innerHTML = `
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-calendar-times fa-2x mb-2"></i>
+                        <p>Nenhum compromisso agendado</p>
+                    </div>
+                `;
                 return;
             }
             
-            tbody.innerHTML = compromissos.map(c => `
-                <tr>
-                    <td>
-                        <strong>${formatDate(c.data)}</strong><br>
-                        <small>${c.hora}</small>
-                    </td>
-                    <td>${c.cliente || 'N/A'}</td>
-                    <td>
-                        <span class="badge bg-info">${c.tipo}</span>
-                    </td>
-                    <td>
-                        <span class="badge-status badge-${c.status === 'concluido' ? 'active' : 'pending'}">
-                            ${c.status === 'concluido' ? 'Concluído' : 'Pendente'}
-                        </span>
-                    </td>
-                </tr>
+            container.innerHTML = compromissos.slice(0, 5).map(c => `
+                <div class="compromisso-item">
+                    <div class="compromisso-icon" style="background: ${getTipoColor(c.tipo)}15; color: ${getTipoColor(c.tipo)};">
+                        <i class="fas ${getTipoIcon(c.tipo)}"></i>
+                    </div>
+                    <div class="compromisso-info">
+                        <h6>${c.titulo}</h6>
+                        <p>${c.cliente || 'Sem cliente'}</p>
+                    </div>
+                    <div class="compromisso-time">
+                        <span>${c.horaInicio || c.hora}</span>
+                        <small>${formatDate(c.data)}</small>
+                    </div>
+                </div>
             `).join('');
             
         } catch (error) {
@@ -249,74 +361,62 @@
         }
     }
     
-    // Load Vendas
-    async function loadVendas() {
+    async function loadUltimosPedidos() {
         try {
             const response = await fetch('/api/pedidos?limit=5');
-            const vendas = await response.json();
+            const pedidos = await response.json();
             
-            const tbody = document.getElementById('vendasTable');
+            const container = document.getElementById('ultimosPedidos');
             
-            if (vendas.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center">Nenhuma venda registrada</td></tr>';
+            if (pedidos.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-shopping-bag fa-2x mb-2"></i>
+                        <p>Nenhum pedido registrado</p>
+                    </div>
+                `;
                 return;
             }
             
-            tbody.innerHTML = vendas.map(v => `
-                <tr>
-                    <td>${formatDate(v.data)}</td>
-                    <td>${v.cliente}</td>
-                    <td><strong>${formatCurrency(v.valorTotal)}</strong></td>
-                    <td>
-                        <span class="badge-status badge-${v.status === 'aprovado' ? 'active' : v.status === 'cancelado' ? 'inactive' : 'pending'}">
-                            ${v.status === 'aprovado' ? 'Aprovado' : v.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
-                        </span>
-                    </td>
-                </tr>
+            container.innerHTML = pedidos.slice(0, 5).map(p => `
+                <div class="pedido-item">
+                    <div class="pedido-icon" style="background: ${getStatusColor(p.status)}15; color: ${getStatusColor(p.status)};">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <div class="pedido-info">
+                        <h6>Pedido #${p.id.slice(-6)}</h6>
+                        <p>${p.clienteNome || 'Cliente'}</p>
+                    </div>
+                    <div class="pedido-value">
+                        <span>R$ ${(p.valorTotal || 0).toLocaleString('pt-BR')}</span>
+                        <small>${p.status || 'Pendente'}</small>
+                    </div>
+                </div>
             `).join('');
             
         } catch (error) {
-            console.error('Erro ao carregar vendas:', error);
+            console.error('Erro ao carregar pedidos:', error);
         }
     }
     
-    // Initialize Sales Chart
-    function initSalesChart() {
-        const ctx = document.getElementById('salesChart');
-        if (!ctx) return;
-        
-        // Generate sample data for last 30 days
-        const labels = [];
-        const data = [];
-        
-        for (let i = 29; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            labels.push(date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
-            data.push(Math.floor(Math.random() * 10000) + 2000);
-        }
-        
-        // Destroy existing chart if any
-        if (salesChart) {
-            salesChart.destroy();
-        }
-        
-        salesChart = new Chart(ctx, {
+    function initCharts() {
+        // Chart de vendas
+        const ctxVendas = document.getElementById('vendasChart').getContext('2d');
+        vendasChart = new Chart(ctxVendas, {
             type: 'line',
             data: {
-                labels: labels,
+                labels: ['Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
                 datasets: [{
-                    label: 'Vendas (R$)',
-                    data: data,
+                    label: 'Vendas',
+                    data: [85000, 92000, 88000, 105000, 125000, 135000],
                     borderColor: '#667eea',
                     backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                    borderWidth: 3,
                     fill: true,
                     tension: 0.4,
-                    pointRadius: 4,
+                    borderWidth: 3,
                     pointBackgroundColor: '#667eea',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2
+                    pointRadius: 5,
+                    pointHoverRadius: 8
                 }]
             },
             options: {
@@ -325,13 +425,6 @@
                 plugins: {
                     legend: {
                         display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return 'Vendas: ' + formatCurrency(context.parsed.y);
-                            }
-                        }
                     }
                 },
                 scales: {
@@ -339,26 +432,86 @@
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                return formatCurrency(value);
+                                return 'R$ ' + (value/1000) + 'k';
                             }
                         }
                     }
                 }
             }
         });
+        
+        // Chart de clientes (placeholder)
+        const ctxClientes = document.getElementById('clientesChart').getContext('2d');
+        clientesChart = new Chart(ctxClientes, {
+            type: 'doughnut',
+            data: {
+                labels: ['Ativos', 'Inativos', 'Novos'],
+                datasets: [{
+                    data: [38, 7, 5],
+                    backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                cutout: '70%'
+            }
+        });
     }
     
-    // Update Chart
-    function updateChart(period) {
-        // Update chart based on period
-        // This would fetch new data and update the chart
-        console.log('Updating chart for period:', period);
+    function updateClientesChart(data) {
+        if (clientesChart) {
+            clientesChart.data.datasets[0].data = [
+                data.ativos,
+                data.ausentes,
+                data.novos
+            ];
+            clientesChart.update();
+        }
     }
     
-    // Initialize on load
-    document.addEventListener('DOMContentLoaded', loadDashboard);
+    function getTipoColor(tipo) {
+        const colors = {
+            'visita': '#667eea',
+            'reuniao': '#10b981',
+            'ligacao': '#f59e0b',
+            'entrega': '#06b6d4',
+            'outro': '#64748b'
+        };
+        return colors[tipo] || '#64748b';
+    }
     
-    // Refresh every 5 minutes
-    setInterval(loadDashboard, 300000);
+    function getTipoIcon(tipo) {
+        const icons = {
+            'visita': 'fa-map-marker-alt',
+            'reuniao': 'fa-handshake',
+            'ligacao': 'fa-phone',
+            'entrega': 'fa-truck',
+            'outro': 'fa-calendar'
+        };
+        return icons[tipo] || 'fa-calendar';
+    }
+    
+    function getStatusColor(status) {
+        const colors = {
+            'pendente': '#f59e0b',
+            'aprovado': '#10b981',
+            'cancelado': '#ef4444',
+            'entregue': '#667eea'
+        };
+        return colors[status] || '#64748b';
+    }
+    
+    function formatDate(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('pt-BR');
+    }
 </script>
 {% endblock %}

@@ -1,72 +1,75 @@
 {% extends "base.html" %}
 
-{% block title %}Clientes - Gestão Comercial{% endblock %}
-{% block page_title %}Clientes{% endblock %}
+{% block title %}Clientes - ComercialPRO{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Header Actions -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="input-group">
-                <span class="input-group-text">
-                    <i class="fas fa-search"></i>
-                </span>
-                <input type="text" class="form-control" id="searchInput" placeholder="Buscar clientes...">
-            </div>
+<div class="clientes-content">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-1">Gestão de Clientes</h4>
+            <p class="text-muted mb-0">Gerencie sua carteira de clientes</p>
         </div>
-        <div class="col-md-6 text-end">
-            <button class="btn btn-gradient" onclick="openClientModal()">
-                <i class="fas fa-plus"></i> Novo Cliente
-            </button>
-            <button class="btn btn-outline-primary" onclick="exportClients()">
-                <i class="fas fa-download"></i> Exportar
-            </button>
+        <button class="btn btn-primary" onclick="openClienteModal()">
+            <i class="fas fa-plus me-2"></i>Novo Cliente
+        </button>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="card-custom mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" class="form-control" id="searchCliente" placeholder="Buscar cliente..." oninput="filterClientes()">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="filterStatus" onchange="filterClientes()">
+                        <option value="">Todos os Status</option>
+                        <option value="ativo">Ativos</option>
+                        <option value="inativo">Inativos</option>
+                        <option value="prospecto">Prospectos</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="filterCategoria" onchange="filterClientes()">
+                        <option value="">Todas as Categorias</option>
+                        <option value="varejo">Varejo</option>
+                        <option value="atacado">Atacado</option>
+                        <option value="distribuidor">Distribuidor</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-secondary w-100" onclick="exportClientes()">
+                        <i class="fas fa-download me-2"></i>Exportar
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
     
-    <!-- Filters -->
-    <div class="row mb-3">
-        <div class="col-md-12">
-            <div class="btn-group">
-                <button class="btn btn-sm btn-outline-secondary active" onclick="filterClients('todos')">
-                    Todos <span class="badge bg-secondary ms-1" id="countTodos">0</span>
-                </button>
-                <button class="btn btn-sm btn-outline-success" onclick="filterClients('ativo')">
-                    Ativos <span class="badge bg-success ms-1" id="countAtivos">0</span>
-                </button>
-                <button class="btn btn-sm btn-outline-warning" onclick="filterClients('pendente')">
-                    Pendentes <span class="badge bg-warning ms-1" id="countPendentes">0</span>
-                </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="filterClients('inativo')">
-                    Inativos <span class="badge bg-danger ms-1" id="countInativos">0</span>
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Clients Table -->
-    <div class="custom-table">
+    <!-- Lista de Clientes -->
+    <div class="card-custom">
         <div class="table-responsive">
-            <table class="table table-hover" id="clientsTable">
+            <table class="table table-hover mb-0">
                 <thead>
                     <tr>
-                        <th>
-                            <input type="checkbox" id="selectAll">
-                        </th>
-                        <th>Nome Fantasia</th>
-                        <th>CNPJ</th>
-                        <th>Telefone</th>
-                        <th>Cidade</th>
+                        <th>Cliente</th>
+                        <th>Contato</th>
+                        <th>Endereço</th>
                         <th>Status</th>
                         <th>Última Compra</th>
-                        <th>Total</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
-                <tbody id="clientsTableBody">
+                <tbody id="clientesTable">
                     <tr>
-                        <td colspan="9" class="text-center">Carregando clientes...</td>
+                        <td colspan="6" class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                            <p class="mt-2 mb-0">Carregando clientes...</p>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -74,449 +77,410 @@
     </div>
 </div>
 
-<!-- Client Modal -->
-<div class="modal fade" id="clientModal" tabindex="-1">
+<!-- Modal Novo/Editar Cliente -->
+<div class="modal fade" id="clienteModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="clientModalTitle">Novo Cliente</h5>
+                <h5 class="modal-title" id="clienteModalTitle">
+                    <i class="fas fa-user-plus me-2"></i>Novo Cliente
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="clientForm">
-                    <input type="hidden" id="clientId">
+                <form id="clienteForm">
+                    <input type="hidden" id="clienteId">
                     
-                    <ul class="nav nav-tabs mb-3">
-                        <li class="nav-item">
-                            <a class="nav-link active" data-bs-toggle="tab" href="#dadosGerais">Dados Gerais</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#endereco">Endereço</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#contato">Contato</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#financeiro">Financeiro</a>
-                        </li>
-                    </ul>
+                    <!-- Dados Básicos -->
+                    <h6 class="mb-3"><i class="fas fa-building me-2"></i>Dados da Empresa</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-8">
+                            <label class="form-label">Nome Fantasia *</label>
+                            <input type="text" class="form-control" id="fantasia" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">CNPJ/CPF</label>
+                            <input type="text" class="form-control" id="documento">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Razão Social</label>
+                            <input type="text" class="form-control" id="razaoSocial">
+                        </div>
+                    </div>
                     
-                    <div class="tab-content">
-                        <!-- Dados Gerais -->
-                        <div class="tab-pane fade show active" id="dadosGerais">
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Razão Social *</label>
-                                    <input type="text" class="form-control" id="razaoSocial" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Nome Fantasia *</label>
-                                    <input type="text" class="form-control" id="fantasia" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">CNPJ *</label>
-                                    <input type="text" class="form-control" id="cnpj" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Inscrição Estadual</label>
-                                    <input type="text" class="form-control" id="inscricaoEstadual">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Status</label>
-                                    <select class="form-select" id="status">
-                                        <option value="ativo">Ativo</option>
-                                        <option value="inativo">Inativo</option>
-                                        <option value="pendente">Pendente</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Website</label>
-                                    <input type="url" class="form-control" id="website">
-                                </div>
-                            </div>
+                    <!-- Contato -->
+                    <h6 class="mb-3"><i class="fas fa-phone me-2"></i>Contato</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Responsável</label>
+                            <input type="text" class="form-control" id="responsavel">
                         </div>
-                        
-                        <!-- Endereço -->
-                        <div class="tab-pane fade" id="endereco">
-                            <div class="row">
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label">CEP</label>
-                                    <input type="text" class="form-control" id="cep" onblur="buscarCep()">
-                                </div>
-                                <div class="col-md-7 mb-3">
-                                    <label class="form-label">Logradouro</label>
-                                    <input type="text" class="form-control" id="logradouro">
-                                </div>
-                                <div class="col-md-2 mb-3">
-                                    <label class="form-label">Número</label>
-                                    <input type="text" class="form-control" id="numero">
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Complemento</label>
-                                    <input type="text" class="form-control" id="complemento">
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Bairro</label>
-                                    <input type="text" class="form-control" id="bairro">
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Cidade</label>
-                                    <input type="text" class="form-control" id="cidade">
-                                </div>
-                                <div class="col-md-2 mb-3">
-                                    <label class="form-label">UF</label>
-                                    <select class="form-select" id="uf">
-                                        <option value="">Selecione</option>
-                                        <option value="SP">SP</option>
-                                        <option value="RJ">RJ</option>
-                                        <option value="MG">MG</option>
-                                        <option value="ES">ES</option>
-                                        <!-- Add more states -->
-                                    </select>
-                                </div>
-                            </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Telefone *</label>
+                            <input type="tel" class="form-control" id="telefone" required>
                         </div>
-                        
-                        <!-- Contato -->
-                        <div class="tab-pane fade" id="contato">
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Telefone *</label>
-                                    <input type="text" class="form-control" id="telefone" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Celular</label>
-                                    <input type="text" class="form-control" id="celular">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Email</label>
-                                    <input type="email" class="form-control" id="email">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Contato Principal</label>
-                                    <input type="text" class="form-control" id="contatoNome">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Cargo do Contato</label>
-                                    <input type="text" class="form-control" id="contatoCargo">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Telefone do Contato</label>
-                                    <input type="text" class="form-control" id="contatoTelefone">
-                                </div>
-                            </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email">
                         </div>
-                        
-                        <!-- Financeiro -->
-                        <div class="tab-pane fade" id="financeiro">
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Limite de Crédito</label>
-                                    <input type="number" class="form-control" id="limite" step="0.01">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Condição de Pagamento</label>
-                                    <select class="form-select" id="condicaoPagamento">
-                                        <option value="a-vista">À Vista</option>
-                                        <option value="30">30 dias</option>
-                                        <option value="30/60">30/60 dias</option>
-                                        <option value="30/60/90">30/60/90 dias</option>
-                                    </select>
-                                </div>
-                                <div class="col-12 mb-3">
-                                    <label class="form-label">Observações</label>
-                                    <textarea class="form-control" id="observacoes" rows="3"></textarea>
-                                </div>
-                            </div>
+                        <div class="col-md-6">
+                            <label class="form-label">WhatsApp</label>
+                            <input type="tel" class="form-control" id="whatsapp">
+                        </div>
+                    </div>
+                    
+                    <!-- Endereço -->
+                    <h6 class="mb-3"><i class="fas fa-map-marker-alt me-2"></i>Endereço</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <label class="form-label">CEP</label>
+                            <input type="text" class="form-control" id="cep" onblur="buscarCEP()">
+                        </div>
+                        <div class="col-md-9">
+                            <label class="form-label">Endereço *</label>
+                            <input type="text" class="form-control" id="endereco" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Número</label>
+                            <input type="text" class="form-control" id="numero">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Bairro</label>
+                            <input type="text" class="form-control" id="bairro">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Cidade</label>
+                            <input type="text" class="form-control" id="cidade">
+                        </div>
+                    </div>
+                    
+                    <!-- Classificação -->
+                    <h6 class="mb-3"><i class="fas fa-tags me-2"></i>Classificação</h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" id="status">
+                                <option value="prospecto">Prospecto</option>
+                                <option value="ativo">Ativo</option>
+                                <option value="inativo">Inativo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Categoria</label>
+                            <select class="form-select" id="categoria">
+                                <option value="varejo">Varejo</option>
+                                <option value="atacado">Atacado</option>
+                                <option value="distribuidor">Distribuidor</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Frequência de Visita</label>
+                            <select class="form-select" id="frequenciaVisita">
+                                <option value="semanal">Semanal</option>
+                                <option value="quinzenal">Quinzenal</option>
+                                <option value="mensal">Mensal</option>
+                                <option value="sob_demanda">Sob Demanda</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Observações</label>
+                            <textarea class="form-control" id="observacoes" rows="3"></textarea>
                         </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-gradient" onclick="saveClient()">
-                    <i class="fas fa-save"></i> Salvar
+                <button type="button" class="btn btn-primary" onclick="saveCliente()">
+                    <i class="fas fa-save me-2"></i>Salvar
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    let allClients = [];
-    let currentFilter = 'todos';
+<style>
+    .card-custom {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
     
-    // Load Clients
-    async function loadClients() {
+    .table th {
+        font-weight: 600;
+        color: #64748b;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        border-bottom: 2px solid #f1f5f9;
+    }
+    
+    .table td {
+        vertical-align: middle;
+        padding: 15px;
+    }
+    
+    .cliente-avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        margin-right: 12px;
+    }
+    
+    .cliente-name {
+        font-weight: 600;
+        color: #1e293b;
+    }
+    
+    .cliente-doc {
+        font-size: 0.85rem;
+        color: #94a3b8;
+    }
+    
+    .status-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .status-ativo {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+    
+    .status-inativo {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+    
+    .status-prospecto {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+    
+    .btn-action {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+
+<script>
+    let clientes = [];
+    let clienteModal;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        clienteModal = new bootstrap.Modal(document.getElementById('clienteModal'));
+        loadClientes();
+    });
+    
+    async function loadClientes() {
         try {
-            showLoading();
-            
             const response = await fetch('/api/clientes');
-            allClients = await response.json();
-            
-            // Update counts
-            updateCounts();
-            
-            // Display clients
-            displayClients(allClients);
-            
+            clientes = await response.json();
+            renderClientes(clientes);
         } catch (error) {
             console.error('Erro ao carregar clientes:', error);
-            Swal.fire('Erro', 'Erro ao carregar clientes', 'error');
-        } finally {
-            hideLoading();
+            showToast('Erro ao carregar clientes', 'danger');
         }
     }
     
-    // Display Clients
-    function displayClients(clients) {
-        const tbody = document.getElementById('clientsTableBody');
+    function renderClientes(lista) {
+        const tbody = document.getElementById('clientesTable');
         
-        if (clients.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center">Nenhum cliente encontrado</td></tr>';
+        if (lista.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhum cliente encontrado</p>
+                        <button class="btn btn-primary btn-sm" onclick="openClienteModal()">
+                            <i class="fas fa-plus me-2"></i>Adicionar primeiro cliente
+                        </button>
+                    </td>
+                </tr>
+            `;
             return;
         }
         
-        tbody.innerHTML = clients.map(client => `
+        tbody.innerHTML = lista.map(c => `
             <tr>
                 <td>
-                    <input type="checkbox" class="client-checkbox" value="${client.id}">
+                    <div class="d-flex align-items-center">
+                        <div class="cliente-avatar">${getInitials(c.fantasia)}</div>
+                        <div>
+                            <div class="cliente-name">${c.fantasia}</div>
+                            <div class="cliente-doc">${c.documento || 'Sem documento'}</div>
+                        </div>
+                    </div>
                 </td>
                 <td>
-                    <strong>${client.fantasia}</strong><br>
-                    <small class="text-muted">${client.razaoSocial}</small>
+                    <div>${c.responsavel || '-'}</div>
+                    <small class="text-muted">${c.telefone || '-'}</small>
                 </td>
-                <td>${client.cnpj}</td>
-                <td>${client.telefone}</td>
-                <td>${client.endereco?.cidade || 'N/A'}</td>
                 <td>
-                    <span class="badge-status badge-${client.status === 'ativo' ? 'active' : client.status === 'inativo' ? 'inactive' : 'pending'}">
-                        ${client.status === 'ativo' ? 'Ativo' : client.status === 'inativo' ? 'Inativo' : 'Pendente'}
+                    <div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        ${c.endereco || '-'}
+                    </div>
+                    <small class="text-muted">${c.cidade || ''}</small>
+                </td>
+                <td>
+                    <span class="status-badge status-${c.status || 'prospecto'}">
+                        ${(c.status || 'prospecto').charAt(0).toUpperCase() + (c.status || 'prospecto').slice(1)}
                     </span>
                 </td>
-                <td>${client.ultimoPedido ? formatDate(client.ultimoPedido) : 'Nunca'}</td>
-                <td><strong>${formatCurrency(client.totalCompras || 0)}</strong></td>
                 <td>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary" onclick="viewClient('${client.id}')" title="Visualizar">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-outline-success" onclick="editClient('${client.id}')" title="Editar">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-outline-danger" onclick="deleteClient('${client.id}')" title="Excluir">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
+                    ${c.ultimaCompra ? new Date(c.ultimaCompra).toLocaleDateString('pt-BR') : 'Nunca'}
+                </td>
+                <td>
+                    <button class="btn btn-outline-primary btn-action me-1" onclick="editCliente('${c.id}')" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-outline-info btn-action me-1" onclick="viewCliente('${c.id}')" title="Ver detalhes">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-outline-danger btn-action" onclick="deleteCliente('${c.id}')" title="Excluir">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </td>
             </tr>
         `).join('');
-        
-        // Initialize DataTable if not already
-        if (!$.fn.DataTable.isDataTable('#clientsTable')) {
-            $('#clientsTable').DataTable({
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json'
-                },
-                pageLength: 25,
-                dom: 'rtip'
-            });
-        }
     }
     
-    // Update Counts
-    function updateCounts() {
-        document.getElementById('countTodos').textContent = allClients.length;
-        document.getElementById('countAtivos').textContent = allClients.filter(c => c.status === 'ativo').length;
-        document.getElementById('countPendentes').textContent = allClients.filter(c => c.status === 'pendente').length;
-        document.getElementById('countInativos').textContent = allClients.filter(c => c.status === 'inativo').length;
-    }
-    
-    // Filter Clients
-    function filterClients(status) {
-        currentFilter = status;
+    function filterClientes() {
+        const search = document.getElementById('searchCliente').value.toLowerCase();
+        const status = document.getElementById('filterStatus').value;
+        const categoria = document.getElementById('filterCategoria').value;
         
-        // Update active button
-        document.querySelectorAll('.btn-group .btn').forEach(btn => {
-            btn.classList.remove('active');
+        let filtered = clientes.filter(c => {
+            const matchSearch = !search || 
+                c.fantasia.toLowerCase().includes(search) ||
+                (c.documento && c.documento.includes(search)) ||
+                (c.responsavel && c.responsavel.toLowerCase().includes(search));
+            const matchStatus = !status || c.status === status;
+            const matchCategoria = !categoria || c.categoria === categoria;
+            
+            return matchSearch && matchStatus && matchCategoria;
         });
-        event.target.classList.add('active');
         
-        // Filter clients
-        let filtered = allClients;
-        if (status !== 'todos') {
-            filtered = allClients.filter(c => c.status === status);
-        }
-        
-        displayClients(filtered);
+        renderClientes(filtered);
     }
     
-    // Open Client Modal
-    function openClientModal() {
-        document.getElementById('clientForm').reset();
-        document.getElementById('clientId').value = '';
-        document.getElementById('clientModalTitle').textContent = 'Novo Cliente';
-        new bootstrap.Modal(document.getElementById('clientModal')).show();
+    function openClienteModal() {
+        document.getElementById('clienteForm').reset();
+        document.getElementById('clienteId').value = '';
+        document.getElementById('clienteModalTitle').innerHTML = '<i class="fas fa-user-plus me-2"></i>Novo Cliente';
+        clienteModal.show();
     }
     
-    // Edit Client
-    function editClient(clientId) {
-        const client = allClients.find(c => c.id === clientId);
-        if (!client) return;
+    async function editCliente(id) {
+        const cliente = clientes.find(c => c.id === id);
+        if (!cliente) return;
         
-        document.getElementById('clientId').value = client.id;
-        document.getElementById('clientModalTitle').textContent = 'Editar Cliente';
+        document.getElementById('clienteId').value = id;
+        document.getElementById('fantasia').value = cliente.fantasia || '';
+        document.getElementById('documento').value = cliente.documento || '';
+        document.getElementById('razaoSocial').value = cliente.razaoSocial || '';
+        document.getElementById('responsavel').value = cliente.responsavel || '';
+        document.getElementById('telefone').value = cliente.telefone || '';
+        document.getElementById('email').value = cliente.email || '';
+        document.getElementById('whatsapp').value = cliente.whatsapp || '';
+        document.getElementById('cep').value = cliente.cep || '';
+        document.getElementById('endereco').value = cliente.endereco || '';
+        document.getElementById('numero').value = cliente.numero || '';
+        document.getElementById('bairro').value = cliente.bairro || '';
+        document.getElementById('cidade').value = cliente.cidade || '';
+        document.getElementById('status').value = cliente.status || 'prospecto';
+        document.getElementById('categoria').value = cliente.categoria || 'varejo';
+        document.getElementById('frequenciaVisita').value = cliente.frequenciaVisita || 'mensal';
+        document.getElementById('observacoes').value = cliente.observacoes || '';
         
-        // Fill form
-        document.getElementById('razaoSocial').value = client.razaoSocial;
-        document.getElementById('fantasia').value = client.fantasia;
-        document.getElementById('cnpj').value = client.cnpj;
-        document.getElementById('inscricaoEstadual').value = client.inscricaoEstadual || '';
-        document.getElementById('status').value = client.status;
-        document.getElementById('website').value = client.website || '';
-        
-        // Address
-        if (client.endereco) {
-            document.getElementById('cep').value = client.endereco.cep || '';
-            document.getElementById('logradouro').value = client.endereco.logradouro || '';
-            document.getElementById('numero').value = client.endereco.numero || '';
-            document.getElementById('complemento').value = client.endereco.complemento || '';
-            document.getElementById('bairro').value = client.endereco.bairro || '';
-            document.getElementById('cidade').value = client.endereco.cidade || '';
-            document.getElementById('uf').value = client.endereco.uf || '';
-        }
-        
-        // Contact
-        document.getElementById('telefone').value = client.telefone;
-        document.getElementById('celular').value = client.celular || '';
-        document.getElementById('email').value = client.email || '';
-        
-        if (client.contato) {
-            document.getElementById('contatoNome').value = client.contato.nome || '';
-            document.getElementById('contatoCargo').value = client.contato.cargo || '';
-            document.getElementById('contatoTelefone').value = client.contato.telefone || '';
-        }
-        
-        // Financial
-        document.getElementById('limite').value = client.limite || '';
-        document.getElementById('condicaoPagamento').value = client.condicaoPagamento || '30';
-        document.getElementById('observacoes').value = client.observacoes || '';
-        
-        new bootstrap.Modal(document.getElementById('clientModal')).show();
+        document.getElementById('clienteModalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Editar Cliente';
+        clienteModal.show();
     }
     
-    // Save Client
-    async function saveClient() {
-        const clientId = document.getElementById('clientId').value;
-        const isEdit = !!clientId;
+    async function saveCliente() {
+        const id = document.getElementById('clienteId').value;
         
-        const clientData = {
-            razaoSocial: document.getElementById('razaoSocial').value,
+        const data = {
             fantasia: document.getElementById('fantasia').value,
-            cnpj: document.getElementById('cnpj').value,
-            inscricaoEstadual: document.getElementById('inscricaoEstadual').value,
-            status: document.getElementById('status').value,
-            website: document.getElementById('website').value,
+            documento: document.getElementById('documento').value,
+            razaoSocial: document.getElementById('razaoSocial').value,
+            responsavel: document.getElementById('responsavel').value,
             telefone: document.getElementById('telefone').value,
-            celular: document.getElementById('celular').value,
             email: document.getElementById('email').value,
-            endereco: {
-                cep: document.getElementById('cep').value,
-                logradouro: document.getElementById('logradouro').value,
-                numero: document.getElementById('numero').value,
-                complemento: document.getElementById('complemento').value,
-                bairro: document.getElementById('bairro').value,
-                cidade: document.getElementById('cidade').value,
-                uf: document.getElementById('uf').value
-            },
-            contato: {
-                nome: document.getElementById('contatoNome').value,
-                cargo: document.getElementById('contatoCargo').value,
-                telefone: document.getElementById('contatoTelefone').value
-            },
-            limite: parseFloat(document.getElementById('limite').value) || 0,
-            condicaoPagamento: document.getElementById('condicaoPagamento').value,
+            whatsapp: document.getElementById('whatsapp').value,
+            cep: document.getElementById('cep').value,
+            endereco: document.getElementById('endereco').value,
+            numero: document.getElementById('numero').value,
+            bairro: document.getElementById('bairro').value,
+            cidade: document.getElementById('cidade').value,
+            status: document.getElementById('status').value,
+            categoria: document.getElementById('categoria').value,
+            frequenciaVisita: document.getElementById('frequenciaVisita').value,
             observacoes: document.getElementById('observacoes').value
         };
         
         try {
-            showLoading();
-            
-            const url = isEdit ? `/api/clientes/${clientId}` : '/api/clientes';
-            const method = isEdit ? 'PUT' : 'POST';
+            const url = id ? `/api/clientes/${id}` : '/api/clientes';
+            const method = id ? 'PUT' : 'POST';
             
             const response = await fetch(url, {
                 method: method,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(clientData)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
             });
             
             if (response.ok) {
-                Swal.fire('Sucesso', `Cliente ${isEdit ? 'atualizado' : 'cadastrado'} com sucesso!`, 'success');
-                bootstrap.Modal.getInstance(document.getElementById('clientModal')).hide();
-                loadClients();
+                clienteModal.hide();
+                showToast(id ? 'Cliente atualizado!' : 'Cliente criado!', 'success');
+                loadClientes();
             } else {
                 const error = await response.json();
-                Swal.fire('Erro', error.error || 'Erro ao salvar cliente', 'error');
+                showToast(error.error || 'Erro ao salvar', 'danger');
             }
-            
         } catch (error) {
             console.error('Erro ao salvar cliente:', error);
-            Swal.fire('Erro', 'Erro ao salvar cliente', 'error');
-        } finally {
-            hideLoading();
+            showToast('Erro ao salvar cliente', 'danger');
         }
     }
     
-    // Delete Client
-    async function deleteClient(clientId) {
-        const result = await Swal.fire({
-            title: 'Confirmar exclusão?',
-            text: 'Esta ação não pode ser desfeita!',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Sim, excluir',
-            cancelButtonText: 'Cancelar'
-        });
+    async function deleteCliente(id) {
+        if (!confirm('Tem certeza que deseja excluir este cliente?')) return;
         
-        if (result.isConfirmed) {
-            try {
-                showLoading();
-                
-                const response = await fetch(`/api/clientes/${clientId}`, {
-                    method: 'DELETE'
-                });
-                
-                if (response.ok) {
-                    Swal.fire('Excluído!', 'Cliente excluído com sucesso.', 'success');
-                    loadClients();
-                } else {
-                    Swal.fire('Erro', 'Erro ao excluir cliente', 'error');
-                }
-                
-            } catch (error) {
-                console.error('Erro ao excluir cliente:', error);
-                Swal.fire('Erro', 'Erro ao excluir cliente', 'error');
-            } finally {
-                hideLoading();
+        try {
+            const response = await fetch(`/api/clientes/${id}`, { method: 'DELETE' });
+            
+            if (response.ok) {
+                showToast('Cliente excluído!', 'success');
+                loadClientes();
+            } else {
+                const error = await response.json();
+                showToast(error.error || 'Erro ao excluir', 'danger');
             }
+        } catch (error) {
+            console.error('Erro ao excluir cliente:', error);
+            showToast('Erro ao excluir cliente', 'danger');
         }
     }
     
-    // View Client
-    function viewClient(clientId) {
-        window.location.href = `/clientes/${clientId}`;
+    function viewCliente(id) {
+        window.location.href = `/mapa?cliente=${id}`;
     }
     
-    // Buscar CEP
-    async function buscarCep() {
+    async function buscarCEP() {
         const cep = document.getElementById('cep').value.replace(/\D/g, '');
-        
         if (cep.length !== 8) return;
         
         try {
@@ -524,43 +488,52 @@
             const data = await response.json();
             
             if (!data.erro) {
-                document.getElementById('logradouro').value = data.logradouro;
-                document.getElementById('bairro').value = data.bairro;
-                document.getElementById('cidade').value = data.localidade;
-                document.getElementById('uf').value = data.uf;
+                document.getElementById('endereco').value = data.logradouro || '';
+                document.getElementById('bairro').value = data.bairro || '';
+                document.getElementById('cidade').value = data.localidade || '';
             }
         } catch (error) {
             console.error('Erro ao buscar CEP:', error);
         }
     }
     
-    // Search
-    document.getElementById('searchInput').addEventListener('keyup', function() {
-        const searchTerm = this.value.toLowerCase();
+    function exportClientes() {
+        const csv = [
+            ['Nome', 'Documento', 'Telefone', 'Email', 'Endereço', 'Cidade', 'Status', 'Categoria'].join(','),
+            ...clientes.map(c => [
+                c.fantasia,
+                c.documento || '',
+                c.telefone || '',
+                c.email || '',
+                c.endereco || '',
+                c.cidade || '',
+                c.status || '',
+                c.categoria || ''
+            ].join(','))
+        ].join('\n');
         
-        const filtered = allClients.filter(client => 
-            client.fantasia.toLowerCase().includes(searchTerm) ||
-            client.razaoSocial.toLowerCase().includes(searchTerm) ||
-            client.cnpj.includes(searchTerm) ||
-            (client.endereco?.cidade && client.endereco.cidade.toLowerCase().includes(searchTerm))
-        );
-        
-        displayClients(filtered);
-    });
-    
-    // Select All
-    document.getElementById('selectAll').addEventListener('change', function() {
-        const checkboxes = document.querySelectorAll('.client-checkbox');
-        checkboxes.forEach(cb => cb.checked = this.checked);
-    });
-    
-    // Export Clients
-    function exportClients() {
-        // Implement export functionality
-        Swal.fire('Info', 'Funcionalidade de exportação em desenvolvimento', 'info');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'clientes.csv';
+        a.click();
     }
     
-    // Initialize
-    document.addEventListener('DOMContentLoaded', loadClients);
+    function getInitials(name) {
+        return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+    }
+    
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type} position-fixed`;
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        toast.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+            ${message}
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
 </script>
 {% endblock %}

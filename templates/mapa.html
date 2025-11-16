@@ -1,302 +1,998 @@
 {% extends "base.html" %}
 
-{% block title %}Mapa - Gestão Comercial{% endblock %}
-{% block page_title %}Mapa de Clientes{% endblock %}
+{% block title %}Mapa - ComercialPRO{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
 <style>
+    .map-container {
+        position: relative;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
     #map {
         height: 600px;
         width: 100%;
-        border-radius: 15px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        background: #f0f0f0;
     }
     
     .map-controls {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
         background: white;
-        padding: 20px;
         border-radius: 15px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        width: 320px;
+        max-height: calc(100% - 40px);
+        overflow-y: auto;
+    }
+    
+    .map-controls h5 {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .control-group {
+        margin-bottom: 15px;
+    }
+    
+    .control-group label {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #475569;
+        margin-bottom: 8px;
+        display: block;
+    }
+    
+    .control-group .form-control,
+    .control-group .form-select {
+        border-radius: 10px;
+        font-size: 0.9rem;
+    }
+    
+    .map-style-options {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+    
+    .map-style-option {
+        text-align: center;
+        padding: 10px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .map-style-option:hover {
+        border-color: var(--primary);
+    }
+    
+    .map-style-option.active {
+        border-color: var(--primary);
+        background: rgba(102, 126, 234, 0.1);
+    }
+    
+    .map-style-option i {
+        font-size: 1.5rem;
+        color: var(--primary);
+        margin-bottom: 5px;
+        display: block;
+    }
+    
+    .map-style-option span {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #64748b;
+    }
+    
+    .color-picker-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .color-picker-wrapper input[type="color"] {
+        width: 50px;
+        height: 35px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
     }
     
     .route-info {
         background: white;
-        padding: 15px;
-        border-radius: 10px;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         margin-top: 20px;
     }
     
-    .client-marker {
-        background: white;
-        border: 2px solid #667eea;
+    .route-info h5 {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 15px;
+    }
+    
+    .route-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .route-stat {
+        text-align: center;
+        padding: 15px;
+        background: #f8fafc;
+        border-radius: 10px;
+    }
+    
+    .route-stat h4 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .route-stat.primary h4 {
+        color: var(--primary);
+    }
+    
+    .route-stat.success h4 {
+        color: #10b981;
+    }
+    
+    .route-stat.warning h4 {
+        color: #f59e0b;
+    }
+    
+    .route-stat p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+    
+    .route-sequence {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    .route-stop {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        background: #f8fafc;
+        border-radius: 10px;
+        margin-bottom: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .route-stop:hover {
+        background: rgba(102, 126, 234, 0.1);
+    }
+    
+    .route-stop-number {
+        width: 30px;
+        height: 30px;
+        background: var(--primary);
+        color: white;
         border-radius: 50%;
-        width: 40px;
-        height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: bold;
-        color: #667eea;
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+    
+    .route-stop-info h6 {
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0 0 3px 0;
+        font-size: 0.9rem;
+    }
+    
+    .route-stop-info p {
+        margin: 0;
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+    
+    .client-filter {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .client-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .client-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid #f1f5f9;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .client-item:hover {
+        background: rgba(102, 126, 234, 0.05);
+    }
+    
+    .client-item.selected {
+        background: rgba(102, 126, 234, 0.1);
+    }
+    
+    .client-item input {
+        margin-right: 12px;
+    }
+    
+    .client-item-info h6 {
+        font-weight: 500;
+        color: #1e293b;
+        margin: 0 0 3px 0;
+        font-size: 0.9rem;
+    }
+    
+    .client-item-info p {
+        margin: 0;
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+    
+    .toggle-control {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .form-switch {
+        padding-left: 3em;
+    }
+    
+    .form-switch .form-check-input {
+        width: 3em;
+        height: 1.5em;
+    }
+    
+    .btn-optimize {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 12px 25px;
+        font-weight: 600;
+        color: white;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-optimize:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .btn-clear {
+        background: #f1f5f9;
+        border: none;
+        border-radius: 10px;
+        padding: 12px 25px;
+        font-weight: 600;
+        color: #64748b;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-clear:hover {
+        background: #e2e8f0;
+    }
+    
+    @media (max-width: 768px) {
+        .map-controls {
+            position: static;
+            width: 100%;
+            margin-bottom: 20px;
+            max-height: none;
+        }
+        
+        #map {
+            height: 400px;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Map Controls -->
-    <div class="map-controls">
-        <div class="row align-items-center">
-            <div class="col-md-4">
-                <div class="input-group">
-                    <span class="input-group-text">
-                        <i class="fas fa-search"></i>
-                    </span>
-                    <input type="text" class="form-control" placeholder="Buscar endereço..." id="searchAddress">
-                </div>
-            </div>
-            <div class="col-md-4">
-                <select class="form-select" id="filterStatus">
-                    <option value="">Todos os clientes</option>
-                    <option value="ativo">Clientes Ativos</option>
-                    <option value="pendente">Visitas Pendentes</option>
-                    <option value="visitado">Visitados Hoje</option>
-                </select>
-            </div>
-            <div class="col-md-4 text-end">
-                <button class="btn btn-gradient" onclick="optimizeRoute()">
-                    <i class="fas fa-route"></i> Otimizar Rota
-                </button>
-                <button class="btn btn-outline-primary" onclick="centerMap()">
-                    <i class="fas fa-crosshairs"></i> Minha Localização
-                </button>
-            </div>
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Mapa de Clientes</h2>
+            <p class="text-muted mb-0">Visualize e otimize suas rotas de visitas</p>
         </div>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#settingsModal">
+            <i class="fas fa-cog me-2"></i>Configurações
+        </button>
     </div>
     
-    <!-- Map Container -->
-    <div id="map"></div>
-    
-    <!-- Route Information -->
-    <div class="route-info" id="routeInfo" style="display: none;">
-        <h5 class="mb-3">Rota Otimizada</h5>
-        <div class="row">
-            <div class="col-md-3">
-                <div class="text-center">
-                    <h4 class="text-primary">0 km</h4>
-                    <small class="text-muted">Distância Total</small>
+    <div class="row">
+        <div class="col-lg-4">
+            <!-- Client Filter -->
+            <div class="client-filter">
+                <h5 class="mb-3">
+                    <i class="fas fa-filter me-2"></i>Selecionar Clientes
+                </h5>
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="searchClient" placeholder="Buscar cliente...">
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="text-center">
-                    <h4 class="text-success">0 min</h4>
-                    <small class="text-muted">Tempo Estimado</small>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="text-center">
-                    <h4 class="text-warning">0</h4>
-                    <small class="text-muted">Clientes na Rota</small>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="text-center">
-                    <button class="btn btn-gradient btn-sm" onclick="startNavigation()">
-                        <i class="fas fa-play"></i> Iniciar Navegação
+                <div class="d-flex justify-content-between mb-3">
+                    <button class="btn btn-sm btn-outline-primary" onclick="selectAllClients()">
+                        Selecionar Todos
                     </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="deselectAllClients()">
+                        Limpar Seleção
+                    </button>
+                </div>
+                <div class="client-list" id="clientList">
+                    <p class="text-center text-muted">Carregando clientes...</p>
+                </div>
+            </div>
+            
+            <!-- Route Actions -->
+            <div class="mb-3">
+                <button class="btn btn-optimize mb-2" onclick="optimizeRoute()">
+                    <i class="fas fa-route me-2"></i>Otimizar Rota
+                </button>
+                <button class="btn btn-clear" onclick="clearRoute()">
+                    <i class="fas fa-times me-2"></i>Limpar Rota
+                </button>
+            </div>
+            
+            <!-- Route Info -->
+            <div class="route-info" id="routeInfo" style="display: none;">
+                <h5><i class="fas fa-info-circle me-2"></i>Informações da Rota</h5>
+                <div class="route-stats">
+                    <div class="route-stat primary">
+                        <h4 id="routeDistance">0 km</h4>
+                        <p>Distância Total</p>
+                    </div>
+                    <div class="route-stat success">
+                        <h4 id="routeTime">0 min</h4>
+                        <p>Tempo Estimado</p>
+                    </div>
+                    <div class="route-stat warning">
+                        <h4 id="routeStops">0</h4>
+                        <p>Paradas</p>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted">
+                        <i class="fas fa-leaf me-2"></i>
+                        Economia estimada: <strong id="routeSavings">0 km</strong>
+                    </small>
+                </div>
+                <h6>Sequência de Visitas:</h6>
+                <div class="route-sequence" id="routeSequence">
+                    <!-- Route stops will be inserted here -->
                 </div>
             </div>
         </div>
         
-        <div class="mt-3">
-            <h6>Sequência de Visitas:</h6>
-            <ol id="routeSequence" class="mb-0">
-                <!-- Route sequence will be added here -->
-            </ol>
+        <div class="col-lg-8">
+            <div class="map-container">
+                <div id="map"></div>
+                
+                <!-- Quick Controls -->
+                <div class="map-controls">
+                    <h5>
+                        Controles
+                        <button class="btn btn-sm btn-link" onclick="toggleControls()">
+                            <i class="fas fa-chevron-up" id="controlsToggle"></i>
+                        </button>
+                    </h5>
+                    <div id="controlsContent">
+                        <div class="control-group">
+                            <label>Estilo do Mapa</label>
+                            <div class="map-style-options">
+                                <div class="map-style-option active" onclick="changeMapStyle('streets')">
+                                    <i class="fas fa-road"></i>
+                                    <span>Ruas</span>
+                                </div>
+                                <div class="map-style-option" onclick="changeMapStyle('satellite')">
+                                    <i class="fas fa-satellite"></i>
+                                    <span>Satélite</span>
+                                </div>
+                                <div class="map-style-option" onclick="changeMapStyle('terrain')">
+                                    <i class="fas fa-mountain"></i>
+                                    <span>Terreno</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label>Cor dos Marcadores</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="markerColor" value="#667eea" onchange="updateMarkerColor()">
+                                <span id="markerColorText">#667eea</span>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label>Cor da Rota</label>
+                            <div class="color-picker-wrapper">
+                                <input type="color" id="routeColor" value="#10b981" onchange="updateRouteColor()">
+                                <span id="routeColorText">#10b981</span>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <div class="toggle-control">
+                                <label class="mb-0">Agrupar Marcadores</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="clusterMarkers" checked onchange="toggleClustering()">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <div class="toggle-control">
+                                <label class="mb-0">Mostrar Raio</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="showRadius" onchange="toggleRadius()">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group" id="radiusControl" style="display: none;">
+                            <label>Raio (km): <span id="radiusValue">5</span></label>
+                            <input type="range" class="form-range" id="radiusRange" min="1" max="50" value="5" onchange="updateRadius()">
+                        </div>
+                        
+                        <div class="control-group">
+                            <label>Espessura da Rota</label>
+                            <input type="range" class="form-range" id="routeWeight" min="2" max="10" value="4" onchange="updateRouteWeight()">
+                        </div>
+                        
+                        <div class="control-group">
+                            <button class="btn btn-sm btn-outline-primary w-100" onclick="saveMapConfig()">
+                                <i class="fas fa-save me-2"></i>Salvar Configurações
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal fade" id="settingsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Configurações Avançadas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Ponto de Partida</label>
+                    <select class="form-select" id="startPoint">
+                        <option value="current">Localização Atual</option>
+                        <option value="office">Escritório</option>
+                        <option value="custom">Personalizado</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Velocidade Média (km/h)</label>
+                    <input type="number" class="form-control" id="avgSpeed" value="30">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Tempo por Visita (minutos)</label>
+                    <input type="number" class="form-control" id="visitTime" value="30">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Filtrar por Status</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="">Todos</option>
+                        <option value="ativo">Apenas Ativos</option>
+                        <option value="inativo">Apenas Inativos</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" class="btn btn-primary" onclick="applySettings()">
+                    Aplicar
+                </button>
+            </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 <script>
     let map;
     let markers = [];
-    let userLocation = [-23.5505, -46.6333]; // São Paulo default
+    let markerCluster;
+    let routeLayer;
+    let radiusCircle;
     let clients = [];
+    let selectedClients = [];
+    let currentRoute = null;
+    let mapConfig = {
+        style: 'streets',
+        markerColor: '#667eea',
+        routeColor: '#10b981',
+        clustering: true,
+        showRadius: false,
+        radiusKm: 5,
+        routeWeight: 4
+    };
     
-    // Initialize Map
-    function initMap() {
-        map = L.map('map').setView(userLocation, 13);
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
+    // Map tile layers
+    const tileLayers = {
+        streets: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-        
-        // Add user location marker
-        L.marker(userLocation, {
-            icon: L.divIcon({
-                className: 'user-marker',
-                html: '<i class="fas fa-user-circle" style="font-size: 24px; color: #667eea;"></i>'
-            })
-        }).addTo(map);
-        
-        // Load clients
-        loadMapClients();
-        
-        // Get user's actual location
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(function(position) {
-                userLocation = [position.coords.latitude, position.coords.longitude];
-                map.setView(userLocation, 13);
-            });
-        }
-    }
+        }),
+        satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '© Esri'
+        }),
+        terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenTopoMap'
+        })
+    };
     
-    // Load Clients on Map
-    async function loadMapClients() {
+    // Initialize map
+    document.addEventListener('DOMContentLoaded', function() {
+        map = L.map('map').setView([-23.5505, -46.6333], 11);
+        tileLayers.streets.addTo(map);
+        
+        markerCluster = L.markerClusterGroup();
+        map.addLayer(markerCluster);
+        
+        loadClients();
+        loadMapConfig();
+    });
+    
+    // Load clients
+    async function loadClients() {
         try {
+            showLoading();
             const response = await fetch('/api/mapa/clientes');
             clients = await response.json();
             
-            // Clear existing markers
-            markers.forEach(marker => map.removeLayer(marker));
-            markers = [];
-            
-            // Add client markers
-            clients.forEach((client, index) => {
-                if (client.latitude && client.longitude) {
-                    const marker = L.marker([client.latitude, client.longitude], {
-                        icon: L.divIcon({
-                            className: 'client-marker',
-                            html: `<div class="client-marker">${index + 1}</div>`
-                        })
-                    }).addTo(map);
-                    
-                    marker.bindPopup(`
-                        <div style="min-width: 200px;">
-                            <h6>${client.nome}</h6>
-                            <p class="mb-1">${client.endereco}</p>
-                            <small class="text-muted">Status: ${client.status}</small><br>
-                            <div class="mt-2">
-                                <button class="btn btn-sm btn-primary" onclick="viewClient('${client.id}')">
-                                    <i class="fas fa-eye"></i> Ver Detalhes
-                                </button>
-                                <button class="btn btn-sm btn-success" onclick="startRoute('${client.id}')">
-                                    <i class="fas fa-directions"></i> Ir
-                                </button>
-                            </div>
-                        </div>
-                    `);
-                    
-                    markers.push(marker);
-                }
-            });
-            
-            // Fit map to show all markers
-            if (markers.length > 0) {
-                const group = new L.featureGroup(markers);
-                map.fitBounds(group.getBounds());
-            }
+            renderClientList();
+            addMarkersToMap();
             
         } catch (error) {
-            console.error('Erro ao carregar clientes no mapa:', error);
-        }
-    }
-    
-    // Optimize Route
-    async function optimizeRoute() {
-        try {
-            showLoading();
-            
-            const clientIds = clients.map(c => c.id);
-            
-            const response = await fetch('/api/mapa/otimizar-rota', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ clienteIds: clientIds })
-            });
-            
-            const data = await response.json();
-            
-            // Show route info
-            document.getElementById('routeInfo').style.display = 'block';
-            
-            // Update route statistics
-            document.querySelector('.route-info h4.text-primary').textContent = `${data.distanciaTotal} km`;
-            document.querySelector('.route-info h4.text-success').textContent = `${data.tempoEstimado} min`;
-            document.querySelector('.route-info h4.text-warning').textContent = clients.length;
-            
-            // Update route sequence
-            const sequenceList = document.getElementById('routeSequence');
-            sequenceList.innerHTML = clients.map((client, index) => `
-                <li>${client.nome} - ${client.endereco}</li>
-            `).join('');
-            
-            // Draw route on map (simplified - in production use a routing service)
-            if (markers.length > 1) {
-                const latlngs = markers.map(m => m.getLatLng());
-                L.polyline(latlngs, {color: '#667eea', weight: 4, opacity: 0.7}).addTo(map);
-            }
-            
-            Swal.fire('Sucesso', 'Rota otimizada com sucesso!', 'success');
-            
-        } catch (error) {
-            console.error('Erro ao otimizar rota:', error);
-            Swal.fire('Erro', 'Erro ao otimizar rota', 'error');
+            console.error('Erro ao carregar clientes:', error);
+            showToast('Erro ao carregar clientes', 'error');
         } finally {
             hideLoading();
         }
     }
     
-    // Center Map on User Location
-    function centerMap() {
-        map.setView(userLocation, 15);
+    // Render client list
+    function renderClientList() {
+        const container = document.getElementById('clientList');
+        const searchTerm = document.getElementById('searchClient').value.toLowerCase();
+        
+        const filtered = clients.filter(c => 
+            c.nome.toLowerCase().includes(searchTerm) ||
+            c.endereco.toLowerCase().includes(searchTerm)
+        );
+        
+        if (filtered.length === 0) {
+            container.innerHTML = '<p class="text-center text-muted">Nenhum cliente encontrado</p>';
+            return;
+        }
+        
+        container.innerHTML = filtered.map(c => `
+            <div class="client-item ${selectedClients.includes(c.id) ? 'selected' : ''}" onclick="toggleClientSelection('${c.id}')">
+                <input type="checkbox" ${selectedClients.includes(c.id) ? 'checked' : ''}>
+                <div class="client-item-info">
+                    <h6>${c.nome}</h6>
+                    <p>${c.endereco}</p>
+                </div>
+            </div>
+        `).join('');
     }
     
-    // Start Navigation
-    function startNavigation() {
-        // Open in Google Maps or Waze
-        const destination = clients[0]; // First client in route
-        if (destination) {
-            const url = `https://www.google.com/maps/dir/?api=1&destination=${destination.latitude},${destination.longitude}`;
-            window.open(url, '_blank');
+    // Toggle client selection
+    function toggleClientSelection(clientId) {
+        const index = selectedClients.indexOf(clientId);
+        if (index > -1) {
+            selectedClients.splice(index, 1);
+        } else {
+            selectedClients.push(clientId);
+        }
+        renderClientList();
+        highlightSelectedMarkers();
+    }
+    
+    function selectAllClients() {
+        selectedClients = clients.map(c => c.id);
+        renderClientList();
+        highlightSelectedMarkers();
+    }
+    
+    function deselectAllClients() {
+        selectedClients = [];
+        renderClientList();
+        highlightSelectedMarkers();
+    }
+    
+    // Add markers to map
+    function addMarkersToMap() {
+        markerCluster.clearLayers();
+        markers = [];
+        
+        clients.forEach(client => {
+            if (client.latitude && client.longitude) {
+                const marker = L.marker([client.latitude, client.longitude], {
+                    icon: createCustomIcon(mapConfig.markerColor)
+                });
+                
+                marker.bindPopup(`
+                    <div style="min-width: 200px;">
+                        <h6 style="font-weight: 600; margin-bottom: 10px;">${client.nome}</h6>
+                        <p style="margin: 5px 0; font-size: 0.9rem;">
+                            <i class="fas fa-map-marker-alt me-2"></i>${client.endereco}
+                        </p>
+                        <p style="margin: 5px 0; font-size: 0.9rem;">
+                            <i class="fas fa-phone me-2"></i>${client.telefone || 'N/A'}
+                        </p>
+                        <p style="margin: 5px 0; font-size: 0.9rem;">
+                            <i class="fas fa-dollar-sign me-2"></i>R$ ${(client.totalCompras || 0).toLocaleString('pt-BR')}
+                        </p>
+                        <button class="btn btn-sm btn-primary mt-2" onclick="toggleClientSelection('${client.id}')">
+                            ${selectedClients.includes(client.id) ? 'Remover da Rota' : 'Adicionar à Rota'}
+                        </button>
+                    </div>
+                `);
+                
+                marker.clientId = client.id;
+                markers.push(marker);
+                markerCluster.addLayer(marker);
+            }
+        });
+        
+        if (markers.length > 0) {
+            const group = new L.featureGroup(markers);
+            map.fitBounds(group.getBounds(), { padding: [50, 50] });
         }
     }
     
-    // View Client
-    function viewClient(clientId) {
-        window.location.href = `/clientes/${clientId}`;
+    // Create custom icon
+    function createCustomIcon(color) {
+        return L.divIcon({
+            className: 'custom-marker',
+            html: `<div style="
+                background: ${color};
+                width: 30px;
+                height: 30px;
+                border-radius: 50% 50% 50% 0;
+                transform: rotate(-45deg);
+                border: 3px solid white;
+                box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            "></div>`,
+            iconSize: [30, 30],
+            iconAnchor: [15, 30]
+        });
     }
     
-    // Start Route to Specific Client
-    function startRoute(clientId) {
-        const client = clients.find(c => c.id === clientId);
-        if (client) {
-            const url = `https://www.google.com/maps/dir/?api=1&destination=${client.latitude},${client.longitude}`;
-            window.open(url, '_blank');
+    // Highlight selected markers
+    function highlightSelectedMarkers() {
+        markers.forEach(marker => {
+            const isSelected = selectedClients.includes(marker.clientId);
+            marker.setIcon(createCustomIcon(isSelected ? '#f59e0b' : mapConfig.markerColor));
+        });
+    }
+    
+    // Optimize route
+    async function optimizeRoute() {
+        if (selectedClients.length < 2) {
+            showToast('Selecione pelo menos 2 clientes para otimizar a rota', 'warning');
+            return;
+        }
+        
+        try {
+            showLoading();
+            
+            const response = await fetch('/api/mapa/otimizar-rota', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ clienteIds: selectedClients })
+            });
+            
+            const data = await response.json();
+            currentRoute = data;
+            
+            // Update route info
+            document.getElementById('routeInfo').style.display = 'block';
+            document.getElementById('routeDistance').textContent = data.distanciaTotal + ' km';
+            document.getElementById('routeTime').textContent = data.tempoEstimado + ' min';
+            document.getElementById('routeStops').textContent = data.rota.length;
+            document.getElementById('routeSavings').textContent = data.economia.distancia + ' km';
+            
+            // Update route sequence
+            updateRouteSequence(data.rotaDetalhada || data.rota);
+            
+            // Draw route on map
+            drawRoute(data.rotaDetalhada || data.rota);
+            
+            showToast('Rota otimizada com sucesso!', 'success');
+            
+        } catch (error) {
+            console.error('Erro ao otimizar rota:', error);
+            showToast('Erro ao otimizar rota', 'error');
+        } finally {
+            hideLoading();
         }
     }
     
-    // Filter clients
-    document.getElementById('filterStatus').addEventListener('change', function() {
-        // Implement filter logic
-        loadMapClients();
-    });
-    
-    // Search address
-    document.getElementById('searchAddress').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            // Implement geocoding search
-            const address = this.value;
-            // Use a geocoding service to search
+    // Update route sequence display
+    function updateRouteSequence(rota) {
+        const container = document.getElementById('routeSequence');
+        
+        if (Array.isArray(rota) && rota.length > 0) {
+            if (typeof rota[0] === 'object') {
+                container.innerHTML = rota.map((stop, i) => `
+                    <div class="route-stop">
+                        <div class="route-stop-number">${i + 1}</div>
+                        <div class="route-stop-info">
+                            <h6>${stop.nome}</h6>
+                            <p>Lat: ${stop.lat.toFixed(4)}, Lng: ${stop.lng.toFixed(4)}</p>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = rota.map((clientId, i) => {
+                    const client = clients.find(c => c.id === clientId);
+                    return `
+                        <div class="route-stop">
+                            <div class="route-stop-number">${i + 1}</div>
+                            <div class="route-stop-info">
+                                <h6>${client ? client.nome : 'Cliente'}</h6>
+                                <p>${client ? client.endereco : ''}</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
         }
-    });
+    }
     
-    // Initialize map on load
-    document.addEventListener('DOMContentLoaded', initMap);
+    // Draw route on map
+    function drawRoute(rota) {
+        if (routeLayer) {
+            map.removeLayer(routeLayer);
+        }
+        
+        const latlngs = [];
+        
+        if (Array.isArray(rota) && rota.length > 0) {
+            if (typeof rota[0] === 'object' && rota[0].lat) {
+                rota.forEach(stop => {
+                    latlngs.push([stop.lat, stop.lng]);
+                });
+            } else {
+                rota.forEach(clientId => {
+                    const client = clients.find(c => c.id === clientId);
+                    if (client && client.latitude && client.longitude) {
+                        latlngs.push([client.latitude, client.longitude]);
+                    }
+                });
+            }
+        }
+        
+        if (latlngs.length > 1) {
+            routeLayer = L.polyline(latlngs, {
+                color: mapConfig.routeColor,
+                weight: mapConfig.routeWeight,
+                opacity: 0.8,
+                dashArray: '10, 10'
+            }).addTo(map);
+            
+            // Add arrows
+            const decorator = L.polylineDecorator(routeLayer, {
+                patterns: [
+                    {offset: 25, repeat: 100, symbol: L.Symbol.arrowHead({
+                        pixelSize: 15,
+                        polygon: false,
+                        pathOptions: {
+                            stroke: true,
+                            color: mapConfig.routeColor,
+                            weight: mapConfig.routeWeight
+                        }
+                    })}
+                ]
+            });
+            
+            map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
+        }
+    }
+    
+    // Clear route
+    function clearRoute() {
+        if (routeLayer) {
+            map.removeLayer(routeLayer);
+            routeLayer = null;
+        }
+        currentRoute = null;
+        document.getElementById('routeInfo').style.display = 'none';
+        showToast('Rota limpa', 'info');
+    }
+    
+    // Map controls
+    function changeMapStyle(style) {
+        document.querySelectorAll('.map-style-option').forEach(el => el.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        
+        Object.values(tileLayers).forEach(layer => map.removeLayer(layer));
+        tileLayers[style].addTo(map);
+        mapConfig.style = style;
+    }
+    
+    function updateMarkerColor() {
+        const color = document.getElementById('markerColor').value;
+        document.getElementById('markerColorText').textContent = color;
+        mapConfig.markerColor = color;
+        addMarkersToMap();
+        highlightSelectedMarkers();
+    }
+    
+    function updateRouteColor() {
+        const color = document.getElementById('routeColor').value;
+        document.getElementById('routeColorText').textContent = color;
+        mapConfig.routeColor = color;
+        if (routeLayer) {
+            routeLayer.setStyle({ color: color });
+        }
+    }
+    
+    function toggleClustering() {
+        const enabled = document.getElementById('clusterMarkers').checked;
+        mapConfig.clustering = enabled;
+        
+        if (enabled) {
+            markerCluster.clearLayers();
+            markers.forEach(m => markerCluster.addLayer(m));
+            map.addLayer(markerCluster);
+        } else {
+            map.removeLayer(markerCluster);
+            markers.forEach(m => m.addTo(map));
+        }
+    }
+    
+    function toggleRadius() {
+        const show = document.getElementById('showRadius').checked;
+        mapConfig.showRadius = show;
+        document.getElementById('radiusControl').style.display = show ? 'block' : 'none';
+        
+        if (show) {
+            updateRadius();
+        } else if (radiusCircle) {
+            map.removeLayer(radiusCircle);
+            radiusCircle = null;
+        }
+    }
+    
+    function updateRadius() {
+        const km = document.getElementById('radiusRange').value;
+        document.getElementById('radiusValue').textContent = km;
+        mapConfig.radiusKm = km;
+        
+        if (radiusCircle) {
+            map.removeLayer(radiusCircle);
+        }
+        
+        const center = map.getCenter();
+        radiusCircle = L.circle(center, {
+            radius: km * 1000,
+            color: mapConfig.markerColor,
+            fillColor: mapConfig.markerColor,
+            fillOpacity: 0.1,
+            weight: 2
+        }).addTo(map);
+    }
+    
+    function updateRouteWeight() {
+        const weight = document.getElementById('routeWeight').value;
+        mapConfig.routeWeight = parseInt(weight);
+        if (routeLayer) {
+            routeLayer.setStyle({ weight: weight });
+        }
+    }
+    
+    function toggleControls() {
+        const content = document.getElementById('controlsContent');
+        const icon = document.getElementById('controlsToggle');
+        
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            icon.classList.remove('fa-chevron-down');
+            icon.classList.add('fa-chevron-up');
+        } else {
+            content.style.display = 'none';
+            icon.classList.remove('fa-chevron-up');
+            icon.classList.add('fa-chevron-down');
+        }
+    }
+    
+    // Save/Load map config
+    async function saveMapConfig() {
+        try {
+            const response = await fetch('/api/mapa/configuracoes', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(mapConfig)
+            });
+            
+            if (response.ok) {
+                showToast('Configurações salvas!', 'success');
+            }
+        } catch (error) {
+            console.error('Erro ao salvar configurações:', error);
+        }
+    }
+    
+    async function loadMapConfig() {
+        try {
+            const response = await fetch('/api/mapa/configuracoes');
+            const config = await response.json();
+            
+            if (config && Object.keys(config).length > 0) {
+                mapConfig = { ...mapConfig, ...config };
+                applyMapConfig();
+            }
+        } catch (error) {
+            console.error('Erro ao carregar configurações:', error);
+        }
+    }
+    
+    function applyMapConfig() {
+        document.getElementById('markerColor').value = mapConfig.markerColor;
+        document.getElementById('markerColorText').textContent = mapConfig.markerColor;
+        document.getElementById('routeColor').value = mapConfig.routeColor;
+        document.getElementById('routeColorText').textContent = mapConfig.routeColor;
+        document.getElementById('clusterMarkers').checked = mapConfig.clustering;
+        document.getElementById('showRadius').checked = mapConfig.showRadius;
+        document.getElementById('radiusRange').value = mapConfig.radiusKm;
+        document.getElementById('radiusValue').textContent = mapConfig.radiusKm;
+        document.getElementById('routeWeight').value = mapConfig.routeWeight;
+        
+        if (mapConfig.showRadius) {
+            document.getElementById('radiusControl').style.display = 'block';
+        }
+    }
+    
+    function applySettings() {
+        bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
+        showToast('Configurações aplicadas!', 'success');
+    }
+    
+    // Search clients
+    document.getElementById('searchClient').addEventListener('input', renderClientList);
 </script>
 {% endblock %}
