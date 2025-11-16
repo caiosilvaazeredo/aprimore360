@@ -1,0 +1,620 @@
+{% extends "base.html" %}
+
+{% block title %}Agenda - Gestão Comercial{% endblock %}
+{% block page_title %}Agenda de Compromissos{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+<style>
+    .calendar-controls {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .calendar-container {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    #calendar {
+        height: 700px;
+    }
+    
+    .fc {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .fc-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        border: none !important;
+        text-transform: capitalize;
+    }
+    
+    .fc-button:hover {
+        opacity: 0.9;
+    }
+    
+    .fc-event {
+        border-radius: 5px;
+        padding: 2px 5px;
+        border: none !important;
+    }
+    
+    .event-visita {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .event-reuniao {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+    
+    .event-ligacao {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+    
+    .event-prospeccao {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    }
+    
+    .upcoming-events {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        max-height: 700px;
+        overflow-y: auto;
+    }
+    
+    .event-item {
+        padding: 15px;
+        border-left: 4px solid #667eea;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .event-item:hover {
+        transform: translateX(5px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .event-time {
+        font-weight: bold;
+        color: #667eea;
+        font-size: 0.9rem;
+    }
+    
+    .event-client {
+        font-weight: 600;
+        margin: 5px 0;
+    }
+    
+    .event-type-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .stats-row {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .stat-box {
+        flex: 1;
+        padding: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        text-align: center;
+    }
+    
+    .stat-box h3 {
+        margin: 0;
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    
+    .stat-box p {
+        margin: 5px 0 0;
+        font-size: 0.85rem;
+        opacity: 0.9;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Calendar Controls -->
+    <div class="calendar-controls">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control" placeholder="Buscar compromisso..." id="searchEvent">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="filterType">
+                    <option value="">Todos os tipos</option>
+                    <option value="visita">Visitas</option>
+                    <option value="reuniao">Reuniões</option>
+                    <option value="ligacao">Ligações</option>
+                    <option value="prospeccao">Prospecção</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="filterStatus">
+                    <option value="">Todos os status</option>
+                    <option value="pendente">Pendentes</option>
+                    <option value="concluido">Concluídos</option>
+                    <option value="cancelado">Cancelados</option>
+                </select>
+            </div>
+            <div class="col-md-2 text-end">
+                <button class="btn btn-gradient w-100" data-bs-toggle="modal" data-bs-target="#eventModal">
+                    <i class="fas fa-plus"></i> Novo Compromisso
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Calendar -->
+        <div class="col-lg-8">
+            <div class="calendar-container">
+                <div id="calendar"></div>
+            </div>
+        </div>
+        
+        <!-- Upcoming Events & Stats -->
+        <div class="col-lg-4">
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h3 id="todayCount">0</h3>
+                    <p>Hoje</p>
+                </div>
+                <div class="stat-box" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                    <h3 id="weekCount">0</h3>
+                    <p>Esta Semana</p>
+                </div>
+            </div>
+            
+            <!-- Upcoming Events List -->
+            <div class="upcoming-events">
+                <h5 class="mb-3">
+                    <i class="fas fa-clock"></i> Próximos Compromissos
+                </h5>
+                <div id="upcomingEventsList">
+                    <p class="text-center text-muted">Carregando...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Event Modal -->
+<div class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventModalTitle">Novo Compromisso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="eventForm">
+                    <input type="hidden" id="eventId">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tipo *</label>
+                            <select class="form-select" id="eventType" required>
+                                <option value="">Selecione...</option>
+                                <option value="visita">Visita</option>
+                                <option value="reuniao">Reunião</option>
+                                <option value="ligacao">Ligação</option>
+                                <option value="prospeccao">Prospecção</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Cliente</label>
+                            <select class="form-select" id="eventCliente">
+                                <option value="">Selecione...</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Data *</label>
+                            <input type="date" class="form-control" id="eventData" required>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Hora Início *</label>
+                            <input type="time" class="form-control" id="eventHoraInicio" required>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Hora Fim</label>
+                            <input type="time" class="form-control" id="eventHoraFim">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Título *</label>
+                        <input type="text" class="form-control" id="eventTitulo" placeholder="Ex: Apresentação de coleção" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Descrição</label>
+                        <textarea class="form-control" id="eventDescricao" rows="3" placeholder="Detalhes do compromisso..."></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" id="eventStatus">
+                                <option value="pendente">Pendente</option>
+                                <option value="concluido">Concluído</option>
+                                <option value="cancelado">Cancelado</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Lembrete</label>
+                            <select class="form-select" id="eventLembrete">
+                                <option value="">Sem lembrete</option>
+                                <option value="15">15 minutos antes</option>
+                                <option value="30">30 minutos antes</option>
+                                <option value="60">1 hora antes</option>
+                                <option value="1440">1 dia antes</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Observações</label>
+                        <textarea class="form-control" id="eventObservacoes" rows="2" placeholder="Notas adicionais..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger" id="deleteEventBtn" style="display: none;" onclick="deleteEvent()">
+                    <i class="fas fa-trash"></i> Excluir
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-gradient" onclick="saveEvent()">
+                    <i class="fas fa-save"></i> Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script>
+    let calendar;
+    let events = [];
+    
+    // Initialize Calendar
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('calendar');
+        
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'pt-br',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+            },
+            buttonText: {
+                today: 'Hoje',
+                month: 'Mês',
+                week: 'Semana',
+                day: 'Dia',
+                list: 'Lista'
+            },
+            height: 'auto',
+            events: [],
+            eventClick: function(info) {
+                openEventModal(info.event);
+            },
+            dateClick: function(info) {
+                openNewEventModal(info.date);
+            }
+        });
+        
+        calendar.render();
+        
+        // Load initial data
+        loadEvents();
+        loadClientes();
+        updateStats();
+    });
+    
+    // Load Events
+    async function loadEvents() {
+        try {
+            showLoading();
+            const response = await fetch('/api/compromissos');
+            events = await response.json();
+            
+            // Convert to FullCalendar format
+            const calendarEvents = events.map(e => ({
+                id: e.id,
+                title: e.titulo || `${e.tipo} - ${e.cliente || 'Sem cliente'}`,
+                start: `${e.data}T${e.horaInicio}`,
+                end: e.horaFim ? `${e.data}T${e.horaFim}` : null,
+                className: `event-${e.tipo}`,
+                extendedProps: e
+            }));
+            
+            calendar.removeAllEvents();
+            calendar.addEventSource(calendarEvents);
+            
+            updateUpcomingEvents();
+            updateStats();
+            
+        } catch (error) {
+            console.error('Erro ao carregar eventos:', error);
+            showToast('Erro ao carregar compromissos', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+    
+    // Load Clientes for dropdown
+    async function loadClientes() {
+        try {
+            const response = await fetch('/api/clientes');
+            const clientes = await response.json();
+            
+            const select = document.getElementById('eventCliente');
+            select.innerHTML = '<option value="">Selecione...</option>';
+            
+            clientes.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.id;
+                option.textContent = c.fantasia || c.razaoSocial;
+                select.appendChild(option);
+            });
+            
+        } catch (error) {
+            console.error('Erro ao carregar clientes:', error);
+        }
+    }
+    
+    // Update Upcoming Events List
+    function updateUpcomingEvents() {
+        const now = new Date();
+        const upcoming = events
+            .filter(e => new Date(`${e.data}T${e.horaInicio}`) >= now && e.status === 'pendente')
+            .sort((a, b) => new Date(`${a.data}T${a.horaInicio}`) - new Date(`${b.data}T${b.horaInicio}`))
+            .slice(0, 10);
+        
+        const container = document.getElementById('upcomingEventsList');
+        
+        if (upcoming.length === 0) {
+            container.innerHTML = '<p class="text-center text-muted">Nenhum compromisso pendente</p>';
+            return;
+        }
+        
+        container.innerHTML = upcoming.map(e => {
+            const eventDate = new Date(`${e.data}T${e.horaInicio}`);
+            const isToday = eventDate.toDateString() === now.toDateString();
+            
+            return `
+                <div class="event-item" onclick="openEventModalById('${e.id}')">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="event-time">
+                                <i class="fas fa-clock"></i>
+                                ${isToday ? 'Hoje' : formatDate(e.data)} às ${e.horaInicio}
+                            </div>
+                            <div class="event-client">${e.titulo || e.cliente || 'Sem título'}</div>
+                            <span class="event-type-badge" style="background: ${getEventColor(e.tipo)}20; color: ${getEventColor(e.tipo)};">
+                                ${e.tipo}
+                            </span>
+                        </div>
+                        <i class="fas fa-chevron-right" style="color: #ccc;"></i>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    // Update Stats
+    function updateStats() {
+        const now = new Date();
+        const today = now.toDateString();
+        const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        
+        const todayEvents = events.filter(e => 
+            new Date(`${e.data}T${e.horaInicio}`).toDateString() === today && 
+            e.status === 'pendente'
+        ).length;
+        
+        const weekEvents = events.filter(e => {
+            const eventDate = new Date(`${e.data}T${e.horaInicio}`);
+            return eventDate >= now && eventDate <= weekEnd && e.status === 'pendente';
+        }).length;
+        
+        document.getElementById('todayCount').textContent = todayEvents;
+        document.getElementById('weekCount').textContent = weekEvents;
+    }
+    
+    // Open Event Modal
+    function openEventModal(event) {
+        const props = event.extendedProps;
+        
+        document.getElementById('eventModalTitle').textContent = 'Editar Compromisso';
+        document.getElementById('deleteEventBtn').style.display = 'block';
+        
+        document.getElementById('eventId').value = event.id;
+        document.getElementById('eventType').value = props.tipo;
+        document.getElementById('eventCliente').value = props.clienteId || '';
+        document.getElementById('eventData').value = props.data;
+        document.getElementById('eventHoraInicio').value = props.horaInicio;
+        document.getElementById('eventHoraFim').value = props.horaFim || '';
+        document.getElementById('eventTitulo').value = props.titulo || '';
+        document.getElementById('eventDescricao').value = props.descricao || '';
+        document.getElementById('eventStatus').value = props.status;
+        document.getElementById('eventLembrete').value = props.lembrete || '';
+        document.getElementById('eventObservacoes').value = props.observacoes || '';
+        
+        new bootstrap.Modal(document.getElementById('eventModal')).show();
+    }
+    
+    // Open Event Modal by ID
+    function openEventModalById(eventId) {
+        const event = calendar.getEventById(eventId);
+        if (event) openEventModal(event);
+    }
+    
+    // Open New Event Modal
+    function openNewEventModal(date) {
+        document.getElementById('eventModalTitle').textContent = 'Novo Compromisso';
+        document.getElementById('deleteEventBtn').style.display = 'none';
+        document.getElementById('eventForm').reset();
+        document.getElementById('eventId').value = '';
+        document.getElementById('eventData').value = date.toISOString().split('T')[0];
+        document.getElementById('eventStatus').value = 'pendente';
+        
+        new bootstrap.Modal(document.getElementById('eventModal')).show();
+    }
+    
+    // Save Event
+    async function saveEvent() {
+        const form = document.getElementById('eventForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        
+        const eventData = {
+            id: document.getElementById('eventId').value,
+            tipo: document.getElementById('eventType').value,
+            clienteId: document.getElementById('eventCliente').value,
+            data: document.getElementById('eventData').value,
+            horaInicio: document.getElementById('eventHoraInicio').value,
+            horaFim: document.getElementById('eventHoraFim').value,
+            titulo: document.getElementById('eventTitulo').value,
+            descricao: document.getElementById('eventDescricao').value,
+            status: document.getElementById('eventStatus').value,
+            lembrete: document.getElementById('eventLembrete').value,
+            observacoes: document.getElementById('eventObservacoes').value
+        };
+        
+        try {
+            showLoading();
+            
+            const url = eventData.id ? `/api/compromissos/${eventData.id}` : '/api/compromissos';
+            const method = eventData.id ? 'PUT' : 'POST';
+            
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(eventData)
+            });
+            
+            if (!response.ok) throw new Error('Erro ao salvar compromisso');
+            
+            showToast('Compromisso salvo com sucesso!', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide();
+            loadEvents();
+            
+        } catch (error) {
+            console.error('Erro ao salvar evento:', error);
+            showToast('Erro ao salvar compromisso', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+    
+    // Delete Event
+    async function deleteEvent() {
+        const eventId = document.getElementById('eventId').value;
+        if (!eventId) return;
+        
+        if (!confirm('Tem certeza que deseja excluir este compromisso?')) return;
+        
+        try {
+            showLoading();
+            
+            const response = await fetch(`/api/compromissos/${eventId}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) throw new Error('Erro ao excluir compromisso');
+            
+            showToast('Compromisso excluído com sucesso!', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide();
+            loadEvents();
+            
+        } catch (error) {
+            console.error('Erro ao excluir evento:', error);
+            showToast('Erro ao excluir compromisso', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+    
+    // Get Event Color
+    function getEventColor(tipo) {
+        const colors = {
+            visita: '#667eea',
+            reuniao: '#10b981',
+            ligacao: '#f59e0b',
+            prospeccao: '#3b82f6'
+        };
+        return colors[tipo] || '#667eea';
+    }
+    
+    // Search Events
+    document.getElementById('searchEvent')?.addEventListener('input', function(e) {
+        const search = e.target.value.toLowerCase();
+        calendar.getEvents().forEach(event => {
+            const match = event.title.toLowerCase().includes(search) ||
+                         event.extendedProps.cliente?.toLowerCase().includes(search) ||
+                         event.extendedProps.descricao?.toLowerCase().includes(search);
+            event.setProp('display', match ? 'auto' : 'none');
+        });
+    });
+    
+    // Filter by Type
+    document.getElementById('filterType')?.addEventListener('change', function(e) {
+        const tipo = e.target.value;
+        calendar.getEvents().forEach(event => {
+            const match = !tipo || event.extendedProps.tipo === tipo;
+            event.setProp('display', match ? 'auto' : 'none');
+        });
+    });
+    
+    // Filter by Status
+    document.getElementById('filterStatus')?.addEventListener('change', function(e) {
+        const status = e.target.value;
+        calendar.getEvents().forEach(event => {
+            const match = !status || event.extendedProps.status === status;
+            event.setProp('display', match ? 'auto' : 'none');
+        });
+    });
+</script>
+{% endblock %}
