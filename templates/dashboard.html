@@ -285,9 +285,78 @@
         loadDashboardStats();
         loadProximosCompromissos();
         loadUltimosPedidos();
-        initCharts();
+        loadVendasHistorico();
     });
     
+    
+    // ============ Carrega vendas dos últimos 6 meses da API ============
+    async function loadVendasHistorico() {
+        try {
+            const response = await fetch('/api/dashboard/vendas-historico');
+            const data = await response.json();
+            updateVendasChart(data);
+        } catch (error) {
+            console.error('Erro ao carregar histórico de vendas:', error);
+            updateVendasChart([
+                {mes: 'Jan', valor: 0}, {mes: 'Fev', valor: 0},
+                {mes: 'Mar', valor: 0}, {mes: 'Abr', valor: 0},
+                {mes: 'Mai', valor: 0}, {mes: 'Jun', valor: 0}
+            ]);
+        }
+    }
+    
+    // ============ Atualiza gráfico de vendas ============
+    function updateVendasChart(dados) {
+        const ctx = document.getElementById('vendasChart').getContext('2d');
+        if (vendasChart) vendasChart.destroy();
+        
+        vendasChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dados.map(d => d.mes),
+                datasets: [{
+                    label: 'Vendas',
+                    data: dados.map(d => d.valor),
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointBackgroundColor: '#667eea',
+                    pointRadius: 5,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Vendas: R$ ' + context.parsed.y.toLocaleString('pt-BR', {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                });
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value.toLocaleString('pt-BR');
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     async function loadDashboardStats() {
         try {
             const response = await fetch('/api/dashboard/stats');
@@ -399,7 +468,8 @@
         }
     }
     
-    function initCharts() {
+    /* FUNÇÃO ANTIGA - REMOVIDA
+function initCharts() {
         // Chart de vendas
         const ctxVendas = document.getElementById('vendasChart').getContext('2d');
         vendasChart = new Chart(ctxVendas, {
@@ -417,7 +487,8 @@
                     pointBackgroundColor: '#667eea',
                     pointRadius: 5,
                     pointHoverRadius: 8
-                }]
+                }
+*/]
             },
             options: {
                 responsive: true,

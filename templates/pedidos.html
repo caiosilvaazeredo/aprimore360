@@ -1,6 +1,460 @@
 {% extends "base.html" %}
 
-{% block title %}Pedidos - ComercialPRO{% endblock %}
+{% block title %}Pedidos - ComercialPRO
+<script>
+    let pedidos = [];
+    let clientes = [];
+    let pedidoModal;
+    
+    // Mapeamento de status
+    const STATUS_FLOW = {
+        'pendente': { next: 'aprovado', label: 'Pendente', color: 'warning', icon: 'clock' },
+        'aprovado': { next: 'em_separacao', label: 'Aprovado', color: 'info', icon: 'check-circle' },
+        'em_separacao': { next: 'enviado', label: 'Em Separação', color: 'primary', icon: 'box' },
+        'enviado': { next: 'entregue', label: 'Enviado', color: 'success', icon: 'truck' },
+        'entregue': { next: 'concluido', label: 'Entregue', color: 'success', icon: 'shipping-fast' },
+        'concluido': { next: null, label: 'Concluído ✓', color: 'dark', icon: 'check-double' },
+        'cancelado': { next: null, label: 'Cancelado', color: 'danger', icon: 'times-circle' }
+    };
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        pedidoModal = new bootstrap.Modal(document.getElementById('pedidoModal'));
+        
+        const hoje = new Date();
+        const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+        document.getElementById('dataInicio').value = inicioMes.toISOString().split('T')[0];
+        document.getElementById('dataFim').value = hoje.toISOString().split('T')[0];
+        document.getElementById('pedidoData').value = hoje.toISOString().split('T')[0];
+        
+        loadClientes();
+        loadPedidos();
+        
+        document.getElementById('itensPedido').addEventListener('input', calcularTotais);
+        document.getElementById('pedidoDesconto').addEventListener('input', calcularTotais);
+        document.getElementById('pedidoComissao').addEventListener('input', calcularTotais);
+    });
+    
+    async function loadClientes() {
+        try {
+            const response = await fetch('/api/clientes');
+            clientes = await response.json();
+            
+            const select = document.getElementById('pedidoCliente');
+            select.innerHTML = '<option value="">Selecione um cliente...</option>';
+            
+            clientes.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.id;
+                option.textContent = c.fantasia || c.razaoSocial;
+                select.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Erro ao carregar clientes:', error);
+        }
+    }
+    
+    async function loadPedidos() {
+        try {
+            const response = await fetch('/api/pedidos');
+            pedidos = await response.json();
+            renderPedidos();
+        } catch (error) {
+            console.error('Erro ao carregar pedidos:', error);
+            document.getElementById('pedidosTable').innerHTML = `
+                <tr><td colspan="7" class="text-center text-danger">
+                    Erro ao carregar pedidos
+                </td></tr>
+            `;
+        }
+    }
+    
+    function renderPedidos() {
+        const tbody = document.getElementById('pedidosTable');
+        
+        if (pedidos.length === 0) {
+            tbody.innerHTML = `
+                <tr><td colspan="7" class="text-center text-muted py-4">
+                    <i class="fas fa-inbox fa-2x mb-2"></i>
+                    <p>Nenhum pedido encontrado</p>
+                    <button class="btn btn-primary btn-sm" onclick="openPedidoModal()">
+                        <i class="fas fa-plus me-2"></i>Criar Primeiro Pedido
+                    </button>
+                </td></tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = pedidos.map(p => {
+            const statusInfo = STATUS_FLOW[p.status] || STATUS_FLOW['pendente'];
+            const data = p.data ? new Date(p.data.seconds ? p.data.seconds * 1000 : p.data).toLocaleDateString('pt-BR') : '-';
+            const isConcluido = p.status === 'concluido';
+            const isCancelado = p.status === 'cancelado';
+            
+            return `
+                <tr ${isConcluido ? 'class="table-success"' : ''} ${isCancelado ? 'class="table-danger"' : ''}>
+                    <td>
+                        <strong>#${p.id.slice(-6)}</strong>
+                        ${isConcluido ? '<br><span class="badge bg-success"><i class="fas fa-trophy me-1"></i>VENDA</span>' : ''}
+                    </td>
+                    <td>${p.clienteNome || 'N/A'}</td>
+                    <td>${data}</td>
+                    <td><strong>R$ ${(p.valorTotal || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></td>
+                    <td>R$ ${(p.comissaoValor || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td>
+                        <span class="badge bg-${statusInfo.color}">
+                            <i class="fas fa-${statusInfo.icon} me-1"></i>${statusInfo.label}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary btn-action" onclick="viewPedido('${p.id}')" title="Ver detalhes">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            ${!isConcluido && !isCancelado && statusInfo.next ? `
+                                <button class="btn btn-outline-success btn-action" onclick="avancarStatus('${p.id}')" 
+                                        title="Avançar para ${STATUS_FLOW[statusInfo.next].label}">
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                            ` : ''}
+                            ${!isConcluido && !isCancelado ? `
+                                <button class="btn btn-outline-danger btn-action" onclick="cancelPedido('${p.id}')" title="Cancelar">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    function openPedidoModal() {
+        document.getElementById('pedidoForm').reset();
+        document.getElementById('itensPedido').innerHTML = '';
+        adicionarItem();
+        pedidoModal.show();
+    }
+    
+    function adicionarItem() {
+        const container = document.getElementById('itensPedido');
+        const itemId = Date.now();
+        
+        const itemHtml = `
+            <div class="row g-2 mb-2 item-pedido" data-item="${itemId}">
+                <div class="col-md-5">
+                    <input type="text" class="form-control form-control-sm" placeholder="Nome do produto" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control form-control-sm item-quantidade" placeholder="Qtd" min="1" value="1" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" class="form-control form-control-sm item-preco" placeholder="Preço" min="0" step="0.01" required>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-danger btn-sm w-100" onclick="removerItem(${itemId})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', itemHtml);
+        calcularTotais();
+    }
+    
+    function removerItem(itemId) {
+        const item = document.querySelector(`[data-item="${itemId}"]`);
+        if (item) {
+            item.remove();
+            calcularTotais();
+        }
+    }
+    
+    function calcularTotais() {
+        const itens = document.querySelectorAll('.item-pedido');
+        let subtotal = 0;
+        
+        itens.forEach(item => {
+            const qtd = parseFloat(item.querySelector('.item-quantidade').value) || 0;
+            const preco = parseFloat(item.querySelector('.item-preco').value) || 0;
+            subtotal += qtd * preco;
+        });
+        
+        const desconto = parseFloat(document.getElementById('pedidoDesconto').value) || 0;
+        const total = subtotal - desconto;
+        const comissaoPercent = parseFloat(document.getElementById('pedidoComissao').value) || 0;
+        const comissao = total * (comissaoPercent / 100);
+        
+        document.getElementById('subtotalValue').textContent = `R$ ${subtotal.toFixed(2)}`;
+        document.getElementById('totalValue').textContent = `R$ ${total.toFixed(2)}`;
+        document.getElementById('comissaoValue').textContent = `R$ ${comissao.toFixed(2)}`;
+    }
+    
+    async function savePedido() {
+        const clienteId = document.getElementById('pedidoCliente').value;
+        const data = document.getElementById('pedidoData').value;
+        
+        if (!clienteId || !data) {
+            showToast('Selecione cliente e data', 'warning');
+            return;
+        }
+        
+        const itemElements = document.querySelectorAll('.item-pedido');
+        const itens = [];
+        
+        itemElements.forEach(item => {
+            const nome = item.querySelector('input[placeholder="Nome do produto"]').value;
+            const quantidade = parseFloat(item.querySelector('.item-quantidade').value);
+            const preco = parseFloat(item.querySelector('.item-preco').value);
+            
+            if (nome && quantidade && preco) {
+                itens.push({
+                    nome,
+                    quantidade,
+                    preco,
+                    total: quantidade * preco
+                });
+            }
+        });
+        
+        if (itens.length === 0) {
+            showToast('Adicione pelo menos um item', 'warning');
+            return;
+        }
+        
+        const subtotal = itens.reduce((sum, i) => sum + i.total, 0);
+        const desconto = parseFloat(document.getElementById('pedidoDesconto').value) || 0;
+        const valorTotal = subtotal - desconto;
+        const comissaoPercent = parseFloat(document.getElementById('pedidoComissao').value) || 0;
+        const comissaoValor = valorTotal * (comissaoPercent / 100);
+        
+        const pedidoData = {
+            clienteId,
+            data,
+            itens,
+            subtotal,
+            desconto,
+            valorTotal,
+            comissaoPercent,
+            comissaoValor,
+            observacoes: document.getElementById('pedidoObs').value || '',
+            status: 'pendente'
+        };
+        
+        try {
+            const response = await fetch('/api/pedidos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pedidoData)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                pedidoModal.hide();
+                showToast('✅ Pedido criado com sucesso!', 'success');
+                loadPedidos();
+            } else {
+                showToast(result.error || 'Erro ao criar pedido', 'danger');
+            }
+        } catch (error) {
+            console.error('Erro ao salvar pedido:', error);
+            showToast('Erro ao salvar pedido', 'danger');
+        }
+    }
+    
+    async function avancarStatus(id) {
+        const pedido = pedidos.find(p => p.id === id);
+        if (!pedido) return;
+        
+        const currentStatus = STATUS_FLOW[pedido.status];
+        if (!currentStatus || !currentStatus.next) return;
+        
+        const nextStatus = STATUS_FLOW[currentStatus.next];
+        const isConclusion = currentStatus.next === 'concluido';
+        
+        let confirmMsg = `Avançar para "${nextStatus.label}"?`;
+        if (isConclusion) {
+            confirmMsg = '🎉 Concluir pedido e registrar como VENDA?\n\nIsso atualizará as estatísticas do cliente.';
+        }
+        
+        if (!confirm(confirmMsg)) return;
+        
+        try {
+            const response = await fetch(`/api/pedidos/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: currentStatus.next })
+            });
+            
+            if (response.ok) {
+                if (isConclusion) {
+                    showToast('🎊 PARABÉNS! Pedido concluído e registrado como venda!', 'success');
+                } else {
+                    showToast(`Status atualizado para "${nextStatus.label}"`, 'success');
+                }
+                loadPedidos();
+            } else {
+                showToast('Erro ao atualizar status', 'danger');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            showToast('Erro ao atualizar status', 'danger');
+        }
+    }
+    
+    async function cancelPedido(id) {
+        if (!confirm('⚠️ Tem certeza que deseja CANCELAR este pedido?')) return;
+        
+        try {
+            const response = await fetch(`/api/pedidos/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'cancelado' })
+            });
+            
+            if (response.ok) {
+                showToast('Pedido cancelado', 'warning');
+                loadPedidos();
+            } else {
+                showToast('Erro ao cancelar', 'danger');
+            }
+        } catch (error) {
+            showToast('Erro ao cancelar', 'danger');
+        }
+    }
+    
+    function viewPedido(id) {
+        const pedido = pedidos.find(p => p.id === id);
+        if (!pedido) return;
+        
+        const statusInfo = STATUS_FLOW[pedido.status] || STATUS_FLOW['pendente'];
+        const itensHtml = (pedido.itens || []).map(i => 
+            `${i.quantidade}x ${i.nome} - R$ ${i.preco.toFixed(2)} = R$ ${i.total.toFixed(2)}`
+        ).join('\n');
+        
+        alert(`📦 PEDIDO #${id.slice(-6)}
+
+👤 Cliente: ${pedido.clienteNome}
+📅 Data: ${new Date(pedido.data.seconds ? pedido.data.seconds * 1000 : pedido.data).toLocaleDateString('pt-BR')}
+📊 Status: ${statusInfo.label}
+
+🛒 ITENS:
+${itensHtml}
+
+💰 Subtotal: R$ ${(pedido.subtotal || 0).toFixed(2)}
+💳 Desconto: R$ ${(pedido.desconto || 0).toFixed(2)}
+💵 TOTAL: R$ ${(pedido.valorTotal || 0).toFixed(2)}
+💼 Comissão: R$ ${(pedido.comissaoValor || 0).toFixed(2)} (${(pedido.comissaoPercent || 0)}%)
+
+${pedido.observacoes ? '📝 Obs: ' + pedido.observacoes : ''}`);
+    }
+    
+    function filterPedidos() {
+        const status = document.getElementById('filterStatus').value;
+        const dataInicio = document.getElementById('dataInicio').value;
+        const dataFim = document.getElementById('dataFim').value;
+        
+        let filtered = [...pedidos];
+        
+        if (status) {
+            filtered = filtered.filter(p => p.status === status);
+        }
+        
+        if (dataInicio || dataFim) {
+            filtered = filtered.filter(p => {
+                const pedidoDate = new Date(p.data.seconds ? p.data.seconds * 1000 : p.data);
+                const inicio = dataInicio ? new Date(dataInicio) : new Date('1900-01-01');
+                const fim = dataFim ? new Date(dataFim) : new Date('2100-12-31');
+                return pedidoDate >= inicio && pedidoDate <= fim;
+            });
+        }
+        
+        pedidos = filtered;
+        renderPedidos();
+    }
+    
+    function exportPedidos() {
+        const csv = [
+            ['ID', 'Cliente', 'Data', 'Valor', 'Comissão', 'Status'].join(','),
+            ...pedidos.map(p => [
+                p.id.slice(-6),
+                (p.clienteNome || '').replace(/,/g, ';'),
+                p.data ? new Date(p.data.seconds ? p.data.seconds * 1000 : p.data).toLocaleDateString('pt-BR') : '',
+                p.valorTotal || 0,
+                p.comissaoValor || 0,
+                (STATUS_FLOW[p.status]?.label || p.status).replace(/,/g, ';')
+            ].join(','))
+        ].join('\n');
+        
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `pedidos_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+    
+    function showToast(message, type = 'info') {
+        const bgColors = {
+            success: '#10b981',
+            danger: '#ef4444',
+            warning: '#f59e0b',
+            info: '#3b82f6'
+        };
+        
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            background: ${bgColors[type] || bgColors.info};
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-weight: 500;
+            max-width: 400px;
+            animation: slideIn 0.3s ease;
+        `;
+        toast.textContent = message;
+        
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+</script>
+
+<style>
+@keyframes slideIn {
+    from { transform: translateX(400px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(400px); opacity: 0; }
+}
+
+.table-success {
+    background-color: rgba(16, 185, 129, 0.1) !important;
+}
+
+.table-danger {
+    background-color: rgba(239, 68, 68, 0.1) !important;
+}
+
+#subtotalValue, #totalValue, #comissaoValue {
+    font-weight: 600;
+    color: #667eea;
+}
+</style>
+
+{% endblock %}
 
 {% block content %}
 <div class="pedidos-content">
@@ -304,392 +758,3 @@
     }
 </style>
 
-<script>
-    let pedidos = [];
-    let clientes = [];
-    let pedidoModal;
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        pedidoModal = new bootstrap.Modal(document.getElementById('pedidoModal'));
-        
-        // Data padrão (mês atual)
-        const hoje = new Date();
-        const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-        document.getElementById('dataInicio').value = inicioMes.toISOString().split('T')[0];
-        document.getElementById('dataFim').value = hoje.toISOString().split('T')[0];
-        document.getElementById('pedidoData').value = hoje.toISOString().split('T')[0];
-        
-        loadClientes();
-        loadPedidos();
-        
-        // Listener para calcular totais
-        document.getElementById('itensPedido').addEventListener('input', calcularTotais);
-        document.getElementById('pedidoComissao').addEventListener('input', calcularTotais);
-    });
-    
-    async function loadClientes() {
-        try {
-            const response = await fetch('/api/clientes');
-            clientes = await response.json();
-            
-            const select = document.getElementById('pedidoCliente');
-            clientes.forEach(c => {
-                const option = document.createElement('option');
-                option.value = c.id;
-                option.textContent = c.fantasia;
-                select.appendChild(option);
-            });
-        } catch (error) {
-            console.error('Erro ao carregar clientes:', error);
-        }
-    }
-    
-    async function loadPedidos() {
-        try {
-            const response = await fetch('/api/pedidos');
-            pedidos = await response.json();
-            renderPedidos(pedidos);
-            updateSummary(pedidos);
-        } catch (error) {
-            console.error('Erro ao carregar pedidos:', error);
-            showToast('Erro ao carregar pedidos', 'danger');
-        }
-    }
-    
-    function renderPedidos(lista) {
-        const tbody = document.getElementById('pedidosTable');
-        
-        if (lista.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" class="text-center py-5">
-                        <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">Nenhum pedido encontrado</p>
-                        <button class="btn btn-primary btn-sm" onclick="openPedidoModal()">
-                            <i class="fas fa-plus me-2"></i>Criar primeiro pedido
-                        </button>
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-        
-        tbody.innerHTML = lista.map(p => `
-            <tr>
-                <td>
-                    <span class="pedido-id">#${p.id.slice(-6).toUpperCase()}</span>
-                </td>
-                <td>${p.clienteNome || 'Cliente'}</td>
-                <td>${p.data ? new Date(p.data.seconds ? p.data.seconds * 1000 : p.data).toLocaleDateString('pt-BR') : '-'}</td>
-                <td><strong>R$ ${(p.valorTotal || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></td>
-                <td class="text-success">R$ ${(p.comissaoValor || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                <td>
-                    <span class="status-badge status-${p.status || 'pendente'}">
-                        ${formatStatus(p.status || 'pendente')}
-                    </span>
-                </td>
-                <td>
-                    <button class="btn btn-outline-info btn-action me-1" onclick="viewPedido('${p.id}')" title="Ver">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="btn btn-outline-success btn-action me-1" onclick="updateStatus('${p.id}')" title="Atualizar Status">
-                        <i class="fas fa-check"></i>
-                    </button>
-                    <button class="btn btn-outline-danger btn-action" onclick="cancelPedido('${p.id}')" title="Cancelar">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
-    }
-    
-    function updateSummary(lista) {
-        const total = lista.length;
-        const valorTotal = lista.reduce((sum, p) => sum + (p.valorTotal || 0), 0);
-        const pendentes = lista.filter(p => p.status === 'pendente').length;
-        const comissoes = lista.reduce((sum, p) => sum + (p.comissaoValor || 0), 0);
-        
-        document.getElementById('totalPedidos').textContent = total;
-        document.getElementById('valorTotal').textContent = `R$ ${valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-        document.getElementById('pendentes').textContent = pendentes;
-        document.getElementById('comissoes').textContent = `R$ ${comissoes.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-    }
-    
-    function filterPedidos() {
-        const dataInicio = document.getElementById('dataInicio').value;
-        const dataFim = document.getElementById('dataFim').value;
-        const status = document.getElementById('filterStatusPedido').value;
-        
-        let filtered = pedidos.filter(p => {
-            const pedidoDate = p.data ? new Date(p.data.seconds ? p.data.seconds * 1000 : p.data) : null;
-            
-            const matchDate = !dataInicio || !dataFim || !pedidoDate || 
-                (pedidoDate >= new Date(dataInicio) && pedidoDate <= new Date(dataFim + 'T23:59:59'));
-            const matchStatus = !status || p.status === status;
-            
-            return matchDate && matchStatus;
-        });
-        
-        renderPedidos(filtered);
-        updateSummary(filtered);
-    }
-    
-    function openPedidoModal() {
-        document.getElementById('pedidoForm').reset();
-        document.getElementById('pedidoData').value = new Date().toISOString().split('T')[0];
-        document.getElementById('pedidoComissao').value = 5;
-        
-        // Reset itens
-        const container = document.getElementById('itensPedido');
-        container.innerHTML = `
-            <div class="item-row mb-3">
-                <div class="row g-2">
-                    <div class="col-md-5">
-                        <input type="text" class="form-control" placeholder="Descrição do produto" required>
-                    </div>
-                    <div class="col-md-2">
-                        <input type="number" class="form-control" placeholder="Qtd" min="1" value="1" required>
-                    </div>
-                    <div class="col-md-3">
-                        <input type="number" class="form-control" placeholder="Valor unit." step="0.01" required>
-                    </div>
-                    <div class="col-md-2">
-                        <button type="button" class="btn btn-outline-danger w-100" onclick="removeItem(this)">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        calcularTotais();
-        pedidoModal.show();
-    }
-    
-    function addItem() {
-        const container = document.getElementById('itensPedido');
-        const itemHtml = `
-            <div class="item-row mb-3">
-                <div class="row g-2">
-                    <div class="col-md-5">
-                        <input type="text" class="form-control" placeholder="Descrição do produto" required>
-                    </div>
-                    <div class="col-md-2">
-                        <input type="number" class="form-control" placeholder="Qtd" min="1" value="1" required>
-                    </div>
-                    <div class="col-md-3">
-                        <input type="number" class="form-control" placeholder="Valor unit." step="0.01" required>
-                    </div>
-                    <div class="col-md-2">
-                        <button type="button" class="btn btn-outline-danger w-100" onclick="removeItem(this)">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        container.insertAdjacentHTML('beforeend', itemHtml);
-    }
-    
-    function removeItem(btn) {
-        const items = document.querySelectorAll('.item-row');
-        if (items.length > 1) {
-            btn.closest('.item-row').remove();
-            calcularTotais();
-        } else {
-            showToast('O pedido precisa ter pelo menos um item', 'warning');
-        }
-    }
-    
-    function calcularTotais() {
-        const items = document.querySelectorAll('.item-row');
-        let subtotal = 0;
-        
-        items.forEach(item => {
-            const inputs = item.querySelectorAll('input');
-            const qtd = parseFloat(inputs[1].value) || 0;
-            const valor = parseFloat(inputs[2].value) || 0;
-            subtotal += qtd * valor;
-        });
-        
-        const desconto = parseFloat(document.getElementById('pedidoDesconto').value) || 0;
-        const total = subtotal - desconto;
-        const comissaoPercent = parseFloat(document.getElementById('pedidoComissao').value) || 0;
-        const comissaoValor = total * (comissaoPercent / 100);
-        
-        document.getElementById('pedidoTotal').textContent = `R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-        document.getElementById('pedidoComissaoValor').textContent = `R$ ${comissaoValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-    }
-    
-    async function savePedido() {
-        const clienteId = document.getElementById('pedidoCliente').value;
-        const data = document.getElementById('pedidoData').value;
-        
-        if (!clienteId || !data) {
-            showToast('Selecione um cliente e data', 'warning');
-            return;
-        }
-        
-        // Coletar itens
-        const items = [];
-        document.querySelectorAll('.item-row').forEach(row => {
-            const inputs = row.querySelectorAll('input');
-            const descricao = inputs[0].value;
-            const qtd = parseFloat(inputs[1].value) || 0;
-            const valor = parseFloat(inputs[2].value) || 0;
-            
-            if (descricao && qtd > 0 && valor > 0) {
-                items.push({ descricao, quantidade: qtd, valorUnitario: valor, total: qtd * valor });
-            }
-        });
-        
-        if (items.length === 0) {
-            showToast('Adicione pelo menos um item ao pedido', 'warning');
-            return;
-        }
-        
-        const subtotal = items.reduce((sum, i) => sum + i.total, 0);
-        const desconto = parseFloat(document.getElementById('pedidoDesconto').value) || 0;
-        const valorTotal = subtotal - desconto;
-        const comissaoPercent = parseFloat(document.getElementById('pedidoComissao').value) || 0;
-        const comissaoValor = valorTotal * (comissaoPercent / 100);
-        
-        const pedidoData = {
-            clienteId,
-            data,
-            itens: items,
-            subtotal,
-            desconto,
-            valorTotal,
-            comissaoPercent,
-            comissaoValor,
-            observacoes: document.getElementById('pedidoObs').value,
-            status: 'pendente'
-        };
-        
-        try {
-            const response = await fetch('/api/pedidos', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(pedidoData)
-            });
-            
-            if (response.ok) {
-                pedidoModal.hide();
-                showToast('Pedido criado com sucesso!', 'success');
-                loadPedidos();
-            } else {
-                const error = await response.json();
-                showToast(error.error || 'Erro ao criar pedido', 'danger');
-            }
-        } catch (error) {
-            console.error('Erro ao salvar pedido:', error);
-            showToast('Erro ao salvar pedido', 'danger');
-        }
-    }
-    
-    async function updateStatus(id) {
-        const pedido = pedidos.find(p => p.id === id);
-        if (!pedido) return;
-        
-        const statusFlow = {
-            'pendente': 'aprovado',
-            'aprovado': 'entregue',
-            'entregue': 'entregue',
-            'cancelado': 'cancelado'
-        };
-        
-        const newStatus = statusFlow[pedido.status] || 'aprovado';
-        
-        if (!confirm(`Atualizar status para "${formatStatus(newStatus)}"?`)) return;
-        
-        try {
-            const response = await fetch(`/api/pedidos/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus })
-            });
-            
-            if (response.ok) {
-                showToast('Status atualizado!', 'success');
-                loadPedidos();
-            } else {
-                showToast('Erro ao atualizar', 'danger');
-            }
-        } catch (error) {
-            showToast('Erro ao atualizar', 'danger');
-        }
-    }
-    
-    async function cancelPedido(id) {
-        if (!confirm('Tem certeza que deseja cancelar este pedido?')) return;
-        
-        try {
-            const response = await fetch(`/api/pedidos/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: 'cancelado' })
-            });
-            
-            if (response.ok) {
-                showToast('Pedido cancelado', 'success');
-                loadPedidos();
-            } else {
-                showToast('Erro ao cancelar', 'danger');
-            }
-        } catch (error) {
-            showToast('Erro ao cancelar', 'danger');
-        }
-    }
-    
-    function viewPedido(id) {
-        const pedido = pedidos.find(p => p.id === id);
-        if (!pedido) return;
-        
-        alert(`Pedido #${id.slice(-6)}\n\nCliente: ${pedido.clienteNome}\nValor: R$ ${pedido.valorTotal}\nStatus: ${pedido.status}`);
-    }
-    
-    function exportPedidos() {
-        const csv = [
-            ['ID', 'Cliente', 'Data', 'Valor', 'Comissão', 'Status'].join(','),
-            ...pedidos.map(p => [
-                p.id.slice(-6),
-                p.clienteNome || '',
-                p.data ? new Date(p.data.seconds ? p.data.seconds * 1000 : p.data).toLocaleDateString('pt-BR') : '',
-                p.valorTotal || 0,
-                p.comissaoValor || 0,
-                p.status || ''
-            ].join(','))
-        ].join('\n');
-        
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'pedidos.csv';
-        a.click();
-    }
-    
-    function formatStatus(status) {
-        const statuses = {
-            'pendente': 'Pendente',
-            'aprovado': 'Aprovado',
-            'entregue': 'Entregue',
-            'cancelado': 'Cancelado'
-        };
-        return statuses[status] || status;
-    }
-    
-    function showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `alert alert-${type} position-fixed`;
-        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-        toast.innerHTML = `
-            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
-            ${message}
-        `;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
-</script>
-{% endblock %}

@@ -719,59 +719,6 @@ def gerar_convite():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ============ API - COMPROMISSOS/AGENDA (CORRIGIDO) ============
-@app.route('/api/compromissos', methods=['GET'])
-@api_login_required
-def get_compromissos():
-    try:
-        if not db:
-            return jsonify([
-                {
-                    'id': '1',
-                    'titulo': 'Visita - Elegance Store',
-                    'tipo': 'visita',
-                    'data': '2025-01-15',
-                    'horaInicio': '09:00',
-                    'horaFim': '10:00',
-                    'clienteId': '1',
-                    'cliente': 'Elegance Store',
-                    'endereco': 'Rua Oscar Freire, 1234',
-                    'observacoes': 'Apresentar nova coleção',
-                    'status': 'pendente'
-                }
-            ]), 200
-        
-        data_inicio = request.args.get('dataInicio')
-        data_fim = request.args.get('dataFim')
-        
-        compromissos_ref = db.collection('compromissos').where('vendedorId', '==', current_user.id)
-        
-        if data_inicio:
-            compromissos_ref = compromissos_ref.where('data', '>=', data_inicio)
-        if data_fim:
-            compromissos_ref = compromissos_ref.where('data', '<=', data_fim)
-        
-        compromissos_ref = compromissos_ref.order_by('data').order_by('horaInicio')
-        
-        compromissos = []
-        for doc in compromissos_ref.stream():
-            compromisso = doc.to_dict()
-            compromisso['id'] = doc.id
-            
-            if compromisso.get('clienteId'):
-                cliente_doc = db.collection('clientes').document(compromisso['clienteId']).get()
-                if cliente_doc.exists:
-                    cliente_data = cliente_doc.to_dict()
-                    compromisso['cliente'] = cliente_data.get('fantasia')
-                    compromisso['clienteEndereco'] = cliente_data.get('endereco')
-            
-            compromissos.append(compromisso)
-        
-        return jsonify(compromissos), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
 @app.route('/api/compromissos', methods=['POST'])
 @api_login_required
 def create_compromisso():
@@ -864,130 +811,8 @@ def delete_compromisso(compromisso_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ============ API - PEDIDOS (CORRIGIDO) ============
-@app.route('/api/pedidos', methods=['GET'])
-@api_login_required
-def get_pedidos():
-    try:
-        if not db:
-            return jsonify([]), 200
-            
-        pedidos_ref = db.collection('pedidos').where('vendedorId', '==', current_user.id)
-        pedidos_ref = pedidos_ref.order_by('data', direction=firestore.Query.DESCENDING)
-        
-        pedidos = []
-        for doc in pedidos_ref.stream():
-            pedido = doc.to_dict()
-            pedido['id'] = doc.id
-            
-            # Busca nome do cliente
-            if pedido.get('clienteId'):
-                cliente_doc = db.collection('clientes').document(pedido['clienteId']).get()
-                if cliente_doc.exists:
-                    pedido['clienteNome'] = cliente_doc.to_dict().get('fantasia', 'Cliente')
-            
-            pedidos.append(pedido)
-        
-        return jsonify(pedidos), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
-@app.route('/api/pedidos', methods=['POST'])
-@api_login_required
-def create_pedido():
-    try:
-        if not db:
-            return jsonify({'error': 'Sistema em modo DEMO'}), 400
-            
-        data = request.json
-        
-        # Validação flexível
-        if 'clienteId' not in data:
-            return jsonify({'error': 'Campo obrigatório: clienteId'}), 400
-        
-        # Calcula valor total se não fornecido
-        if 'valorTotal' not in data and 'itens' in data:
-            data['valorTotal'] = sum(item.get('subtotal', item.get('quantidade', 1) * item.get('preco', 0)) for item in data['itens'])
-        
-        if 'valorTotal' not in data:
-            return jsonify({'error': 'Campo obrigatório: valorTotal ou itens com preço'}), 400
-        
-        # Adiciona metadados
-        data['vendedorId'] = current_user.id
-        data['empresaId'] = current_user.empresa_id
-        data['numero'] = f"PED-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        data['data'] = datetime.now(tz_brasil)
-        data['status'] = data.get('status', 'pendente')
-        
-        # Busca configuração de comissão da empresa
-        comissao_percentual = 5  # Padrão
-        if current_user.empresa_id:
-            empresa_doc = db.collection('empresas').document(current_user.empresa_id).get()
-            if empresa_doc.exists:
-                config = empresa_doc.to_dict().get('configuracoes', {})
-                comissao_percentual = config.get('comissaoPadrao', 5)
-        
-        data['comissaoPercentual'] = comissao_percentual
-        data['comissao'] = data['valorTotal'] * (comissao_percentual / 100)
-        
-        # Salva pedido
-        doc_ref = db.collection('pedidos').add(data)
-        pedido_id = doc_ref[1].id
-        
-        # Atualiza estatísticas do cliente
-        cliente_ref = db.collection('clientes').document(data['clienteId'])
-        cliente_ref.update({
-            'ultimoPedido': datetime.now(tz_brasil),
-            'totalCompras': firestore.Increment(data['valorTotal']),
-            'numeroCompras': firestore.Increment(1)
-        })
-        
-        # Registra atividade
-        db.collection('atividades').add({
-            'tipo': 'pedido_criado',
-            'vendedorId': current_user.id,
-            'empresaId': current_user.empresa_id,
-            'pedidoId': pedido_id,
-            'clienteId': data['clienteId'],
-            'valor': data['valorTotal'],
-            'descricao': f'Novo pedido: {data["numero"]}',
-            'data': datetime.now(tz_brasil)
-        })
-        
-        return jsonify({
-            'id': pedido_id,
-            'numero': data['numero'],
-            'comissao': data['comissao'],
-            'message': 'Pedido criado com sucesso'
-        }), 201
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
-@app.route('/api/pedidos/<pedido_id>', methods=['PUT'])
-@api_login_required
-def update_pedido(pedido_id):
-    try:
-        if not db:
-            return jsonify({'error': 'Sistema em modo DEMO'}), 400
-            
-        data = request.json
-        data['atualizadoEm'] = datetime.now(tz_brasil)
-        
-        # Recalcula comissão se valor alterado
-        if 'valorTotal' in data:
-            pedido_doc = db.collection('pedidos').document(pedido_id).get()
-            if pedido_doc.exists:
-                percentual = pedido_doc.to_dict().get('comissaoPercentual', 5)
-                data['comissao'] = data['valorTotal'] * (percentual / 100)
-        
-        db.collection('pedidos').document(pedido_id).update(data)
-        
-        return jsonify({'message': 'Pedido atualizado com sucesso'}), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 # ============ API - CLIENTES ============
 @app.route('/api/clientes', methods=['GET'])
@@ -1118,6 +943,170 @@ def delete_cliente(cliente_id):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+
+
+
+
+
+# ============ API - PEDIDOS ============
+@app.route('/api/pedidos', methods=['GET'])
+@api_login_required
+def get_pedidos():
+    """Lista pedidos do vendedor"""
+    try:
+        if not db:
+            return jsonify([]), 200
+        
+        # Query SEM ordenação (evita erro de índice Firestore)
+        pedidos_ref = db.collection('pedidos').where('vendedorId', '==', current_user.id)
+        
+        # Busca todos os pedidos
+        pedidos = []
+        for doc in pedidos_ref.stream():
+            pedido = doc.to_dict()
+            pedido['id'] = doc.id
+            
+            # Busca nome do cliente
+            if pedido.get('clienteId'):
+                try:
+                    cliente_doc = db.collection('clientes').document(pedido['clienteId']).get()
+                    if cliente_doc.exists:
+                        cliente_data = cliente_doc.to_dict()
+                        pedido['clienteNome'] = cliente_data.get('fantasia', cliente_data.get('razaoSocial', 'Cliente'))
+                except:
+                    pedido['clienteNome'] = 'Cliente'
+            
+            pedidos.append(pedido)
+        
+        # Ordena em memória (mais recentes primeiro)
+        pedidos.sort(key=lambda x: x.get('data', ''), reverse=True)
+        
+        return jsonify(pedidos), 200
+        
+    except Exception as e:
+        print(f"Erro em get_pedidos: {e}")
+        return jsonify([]), 200
+
+@app.route('/api/pedidos', methods=['POST'])
+@api_login_required
+def create_pedido():
+    """Cria novo pedido"""
+    try:
+        if not db:
+            return jsonify({'error': 'Sistema em modo DEMO'}), 400
+        
+        data = request.json
+        
+        # Validação
+        required_fields = ['clienteId', 'data', 'itens', 'valorTotal']
+        for field in required_fields:
+            if field not in data or not data[field]:
+                return jsonify({'error': f'Campo obrigatório: {field}'}), 400
+        
+        if not isinstance(data['itens'], list) or len(data['itens']) == 0:
+            return jsonify({'error': 'Adicione pelo menos um item'}), 400
+        
+        # Metadados
+        data['vendedorId'] = current_user.id
+        data['empresaId'] = current_user.empresa_id
+        data['criadoEm'] = datetime.now(tz_brasil)
+        data['status'] = data.get('status', 'pendente')
+        
+        # Salva no Firestore
+        doc_ref = db.collection('pedidos').add(data)
+        pedido_id = doc_ref[1].id
+        
+        # Registra atividade
+        try:
+            db.collection('atividades').add({
+                'tipo': 'pedido_criado',
+                'vendedorId': current_user.id,
+                'empresaId': current_user.empresa_id,
+                'pedidoId': pedido_id,
+                'descricao': f'Novo pedido: R$ {data["valorTotal"]:.2f}',
+                'data': datetime.now(tz_brasil)
+            })
+        except:
+            pass
+        
+        return jsonify({'id': pedido_id, 'message': 'Pedido criado com sucesso'}), 201
+        
+    except Exception as e:
+        print(f"Erro em create_pedido: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pedidos/<pedido_id>', methods=['PUT'])
+@api_login_required
+def update_pedido(pedido_id):
+    """Atualiza pedido"""
+    try:
+        if not db:
+            return jsonify({'error': 'Sistema em modo DEMO'}), 400
+        
+        data = request.json
+        data['atualizadoEm'] = datetime.now(tz_brasil)
+        
+        # Se concluindo pedido, atualiza estatísticas do cliente
+        if data.get('status') == 'concluido':
+            try:
+                pedido_doc = db.collection('pedidos').document(pedido_id).get()
+                if pedido_doc.exists:
+                    pedido_data = pedido_doc.to_dict()
+                    
+                    # Atualiza cliente
+                    if pedido_data.get('clienteId'):
+                        cliente_ref = db.collection('clientes').document(pedido_data['clienteId'])
+                        cliente_doc = cliente_ref.get()
+                        
+                        if cliente_doc.exists:
+                            cliente_data = cliente_doc.to_dict()
+                            
+                            cliente_ref.update({
+                                'totalCompras': cliente_data.get('totalCompras', 0) + pedido_data.get('valorTotal', 0),
+                                'numeroCompras': cliente_data.get('numeroCompras', 0) + 1,
+                                'ultimaCompra': datetime.now(tz_brasil)
+                            })
+                    
+                    # Registra conclusão
+                    db.collection('atividades').add({
+                        'tipo': 'pedido_concluido',
+                        'vendedorId': current_user.id,
+                        'empresaId': current_user.empresa_id,
+                        'pedidoId': pedido_id,
+                        'descricao': f'Venda concluída: R$ {pedido_data.get("valorTotal", 0):.2f}',
+                        'data': datetime.now(tz_brasil)
+                    })
+                    
+                    data['concluidoEm'] = datetime.now(tz_brasil)
+            except Exception as e:
+                print(f"Erro ao processar conclusão: {e}")
+        
+        # Atualiza pedido
+        db.collection('pedidos').document(pedido_id).update(data)
+        
+        return jsonify({'message': 'Pedido atualizado com sucesso'}), 200
+        
+    except Exception as e:
+        print(f"Erro em update_pedido: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pedidos/<pedido_id>', methods=['DELETE'])
+@api_login_required
+def delete_pedido(pedido_id):
+    """Exclui pedido"""
+    try:
+        if not db:
+            return jsonify({'error': 'Sistema em modo DEMO'}), 400
+        
+        db.collection('pedidos').document(pedido_id).delete()
+        
+        return jsonify({'message': 'Pedido excluído com sucesso'}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 # ============ API - METAS (MELHORADO) ============
 @app.route('/api/metas', methods=['GET'])
@@ -1703,6 +1692,107 @@ def otimizar_rota():
 @api_login_required
 def get_dashboard_stats():
     try:
+        # Dados demo se Firebase não estiver configurado
+        if not db:
+            return jsonify({
+                'vendas': {
+                    'mes': 125000,
+                    'meta': 150000,
+                    'percentual': 83.3,
+                    'crescimento': 15.5
+                },
+                'clientes': {
+                    'total': 45,
+                    'ativos': 38,
+                    'novos': 5,
+                    'ausentes': 7
+                },
+                'compromissos': {
+                    'hoje': 4,
+                    'semana': 18,
+                    'concluidos': 12,
+                    'pendentes': 6
+                },
+                'produtos': {
+                    'maisVendidos': ['Produto A', 'Produto B', 'Produto C'],
+                    'estoqueBaixo': 3
+                }
+            }), 200
+        
+        hoje = datetime.now(tz_brasil).date()
+        inicio_mes = hoje.replace(day=1)
+        
+        # Inicializa stats com valores padrão
+        stats = {
+            'vendas': {
+                'mes': 0,
+                'meta': 150000,
+                'percentual': 0,
+                'crescimento': 0
+            },
+            'clientes': {
+                'total': 0,
+                'ativos': 0,
+                'novos': 0,
+                'ausentes': 0
+            },
+            'compromissos': {
+                'hoje': 0,
+                'semana': 0,
+                'concluidos': 0,
+                'pendentes': 0
+            },
+            'produtos': {
+                'maisVendidos': [],
+                'estoqueBaixo': 0
+            }
+        }
+        
+        try:
+            # Vendas do mês
+            vendas_ref = db.collection('pedidos').where('vendedorId', '==', current_user.id)
+            vendas_mes = list(vendas_ref.where('data', '>=', inicio_mes).stream())
+            total_vendas = sum([v.to_dict().get('valorTotal', 0) for v in vendas_mes])
+            
+            stats['vendas']['mes'] = total_vendas
+            stats['vendas']['percentual'] = round((total_vendas / 150000 * 100), 1) if total_vendas > 0 else 0
+        except Exception as e:
+            print(f"Erro ao calcular vendas: {e}")
+        
+        try:
+            # Clientes
+            clientes_ref = db.collection('clientes').where('vendedorId', '==', current_user.id)
+            clientes = list(clientes_ref.stream())
+            clientes_ativos = len([c for c in clientes if c.to_dict().get('status') == 'ativo'])
+            
+            stats['clientes']['total'] = len(clientes)
+            stats['clientes']['ativos'] = clientes_ativos
+            stats['clientes']['ausentes'] = len(clientes) - clientes_ativos
+        except Exception as e:
+            print(f"Erro ao calcular clientes: {e}")
+        
+        try:
+            # Compromissos
+            compromissos_ref = db.collection('compromissos').where('vendedorId', '==', current_user.id)
+            compromissos_hoje = len(list(compromissos_ref.where('data', '==', str(hoje)).stream()))
+            
+            stats['compromissos']['hoje'] = compromissos_hoje
+        except Exception as e:
+            print(f"Erro ao calcular compromissos: {e}")
+        
+        return jsonify(stats), 200
+        
+    except Exception as e:
+        print(f"Erro geral em get_dashboard_stats: {e}")
+        # Retorna estrutura mínima em caso de erro crítico
+        return jsonify({
+            'vendas': {'mes': 0, 'meta': 150000, 'percentual': 0, 'crescimento': 0},
+            'clientes': {'total': 0, 'ativos': 0, 'novos': 0, 'ausentes': 0},
+            'compromissos': {'hoje': 0, 'semana': 0, 'concluidos': 0, 'pendentes': 0},
+            'produtos': {'maisVendidos': [], 'estoqueBaixo': 0}
+        }), 200
+
+    try:
         if not db:
             return jsonify({
                 'vendas': {
@@ -1775,6 +1865,81 @@ def get_dashboard_stats():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# ============ API - VENDAS HISTÓRICO (Dashboard) ============
+@app.route('/api/dashboard/vendas-historico', methods=['GET'])
+@api_login_required
+def get_vendas_historico():
+    """Retorna vendas dos últimos 6 meses do vendedor logado"""
+    try:
+        if not db:
+            # Dados demo se Firebase não configurado
+            hoje = datetime.now()
+            meses_demo = []
+            for i in range(5, -1, -1):
+                mes = hoje - timedelta(days=30*i)
+                meses_demo.append({
+                    'mes': mes.strftime('%b'),
+                    'valor': 85000 + (i * 10000)
+                })
+            return jsonify(meses_demo), 200
+        
+        hoje = datetime.now(tz_brasil)
+        vendas_por_mes = {}
+        
+        # Inicializa últimos 6 meses com zero
+        for i in range(5, -1, -1):
+            mes_ref = (hoje - timedelta(days=30*i)).replace(day=1)
+            mes_key = mes_ref.strftime('%Y-%m')
+            mes_label = mes_ref.strftime('%b')
+            vendas_por_mes[mes_key] = {
+                'mes': mes_label,
+                'valor': 0
+            }
+        
+        # Data de 6 meses atrás
+        seis_meses_atras = (hoje - timedelta(days=180)).replace(day=1)
+        
+        try:
+            # Busca pedidos dos últimos 6 meses
+            pedidos_ref = db.collection('pedidos').where('vendedorId', '==', current_user.id)
+            pedidos = list(pedidos_ref.where('data', '>=', seis_meses_atras).stream())
+            
+            # Agrupa vendas por mês
+            for doc in pedidos:
+                pedido = doc.to_dict()
+                valor = pedido.get('valorTotal', 0)
+                data_pedido = pedido.get('data')
+                
+                # Converte data para datetime se necessário
+                if isinstance(data_pedido, str):
+                    data_pedido = datetime.strptime(data_pedido[:10], '%Y-%m-%d')
+                elif hasattr(data_pedido, 'date'):
+                    data_pedido = data_pedido.date()
+                
+                mes_key = data_pedido.strftime('%Y-%m')
+                
+                if mes_key in vendas_por_mes:
+                    vendas_por_mes[mes_key]['valor'] += valor
+        
+        except Exception as e:
+            print(f"Erro ao buscar vendas: {e}")
+        
+        # Retorna array ordenado
+        resultado = [v for k, v in sorted(vendas_por_mes.items())]
+        return jsonify(resultado), 200
+        
+    except Exception as e:
+        print(f"Erro em get_vendas_historico: {e}")
+        return jsonify([
+            {'mes': 'Jan', 'valor': 0},
+            {'mes': 'Fev', 'valor': 0},
+            {'mes': 'Mar', 'valor': 0},
+            {'mes': 'Abr', 'valor': 0},
+            {'mes': 'Mai', 'valor': 0},
+            {'mes': 'Jun', 'valor': 0}
+        ]), 200
 
 # ============ CONFIGURAÇÕES DO USUÁRIO ============
 @app.route('/api/usuario/perfil', methods=['GET'])

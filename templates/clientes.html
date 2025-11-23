@@ -154,6 +154,19 @@
                         </div>
                     </div>
                     
+                    
+                    <!-- Mapa de Confirmação -->
+                    <div id="mapContainer">
+                        <h6 class="mb-2"><i class="fas fa-map-marked-alt me-2"></i>Confirme a localização no mapa</h6>
+                        <div class="map-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Arraste o marcador para ajustar a posição exata
+                        </div>
+                        <div id="clienteMap"></div>
+                        <input type="hidden" id="latitude">
+                        <input type="hidden" id="longitude">
+                    </div>
+
                     <!-- Classificação -->
                     <h6 class="mb-3"><i class="fas fa-tags me-2"></i>Classificação</h6>
                     <div class="row g-3">
@@ -537,3 +550,127 @@
     }
 </script>
 {% endblock %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let clienteMap = null;
+let clienteMarker = null;
+
+function usarLocalizacaoAtual() {
+    if (!navigator.geolocation) {
+        showToast('Geolocalização não suportada pelo navegador', 'error');
+        return;
+    }
+    
+    showToast('Obtendo sua localização...', 'info');
+    
+    navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lng;
+            
+            // Reverse geocoding para preencher endereço
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+                const data = await response.json();
+                
+                if (data.address) {
+                    document.getElementById('endereco').value = data.address.road || '';
+                    document.getElementById('numero').value = data.address.house_number || '';
+                    document.getElementById('bairro').value = data.address.suburb || data.address.neighbourhood || '';
+                    document.getElementById('cidade').value = data.address.city || data.address.town || '';
+                    document.getElementById('cep').value = data.address.postcode || '';
+                }
+                
+                showToast('Localização obtida! Confirme os dados.', 'success');
+                mostrarMapaCliente(lat, lng);
+                
+            } catch (error) {
+                console.error('Erro no reverse geocoding:', error);
+                showToast('Localização obtida! Preencha o endereço manualmente.', 'warning');
+                mostrarMapaCliente(lat, lng);
+            }
+        },
+        (error) => {
+            console.error('Erro de geolocalização:', error);
+            showToast('Não foi possível obter sua localização', 'error');
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
+}
+
+async function confirmarEndereco() {
+    const endereco = document.getElementById('endereco').value;
+    const numero = document.getElementById('numero').value;
+    const cidade = document.getElementById('cidade').value;
+    const cep = document.getElementById('cep').value;
+    
+    if (!endereco || !cidade) {
+        showToast('Preencha o endereço e cidade primeiro', 'warning');
+        return;
+    }
+    
+    const enderecoCompleto = `${endereco}, ${numero} - ${cidade}`;
+    
+    try {
+        showToast('Buscando localização...', 'info');
+        
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(enderecoCompleto)}&format=json&limit=1`);
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+            const lat = parseFloat(data[0].lat);
+            const lng = parseFloat(data[0].lon);
+            
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lng;
+            
+            mostrarMapaCliente(lat, lng);
+            showToast('Localização encontrada! Ajuste o marcador se necessário.', 'success');
+        } else {
+            showToast('Endereço não encontrado. Use "Minha Localização" ou corrija o endereço.', 'warning');
+        }
+    } catch (error) {
+        console.error('Erro ao buscar coordenadas:', error);
+        showToast('Erro ao buscar localização', 'error');
+    }
+}
+
+function mostrarMapaCliente(lat, lng) {
+    const container = document.getElementById('mapContainer');
+    container.style.display = 'block';
+    
+    if (!clienteMap) {
+        clienteMap = L.map('clienteMap').setView([lat, lng], 16);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(clienteMap);
+        
+        clienteMarker = L.marker([lat, lng], {
+            draggable: true
+        }).addTo(clienteMap);
+        
+        clienteMarker.on('dragend', function(e) {
+            const pos = e.target.getLatLng();
+            document.getElementById('latitude').value = pos.lat;
+            document.getElementById('longitude').value = pos.lng;
+        });
+    } else {
+        clienteMap.setView([lat, lng], 16);
+        clienteMarker.setLatLng([lat, lng]);
+    }
+    
+    // Scroll suave até o mapa
+    setTimeout(() => {
+        container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+}
+</script>
