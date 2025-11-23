@@ -87,14 +87,35 @@ if not initialize_firebase():
     db = None
 else:
     db = firestore.client()
+    print("✅ Firestore conectado!")
 
-# Configurações do Firebase para o frontend
-app.config['FIREBASE_API_KEY'] = os.getenv('FIREBASE_API_KEY', '')
-app.config['FIREBASE_AUTH_DOMAIN'] = os.getenv('FIREBASE_AUTH_DOMAIN', '')
-app.config['FIREBASE_PROJECT_ID'] = os.getenv('FIREBASE_PROJECT_ID', '')
-app.config['FIREBASE_STORAGE_BUCKET'] = os.getenv('FIREBASE_STORAGE_BUCKET', '')
-app.config['FIREBASE_MESSAGING_SENDER_ID'] = os.getenv('FIREBASE_MESSAGING_SENDER_ID', '')
-app.config['FIREBASE_APP_ID'] = os.getenv('FIREBASE_APP_ID', '')
+print("\n🔧 Configurando Firebase Web SDK para templates...")
+
+firebase_web_config = {
+    'FIREBASE_API_KEY': os.getenv('FIREBASE_API_KEY', ''),
+    'FIREBASE_AUTH_DOMAIN': os.getenv('FIREBASE_AUTH_DOMAIN', ''),
+    'FIREBASE_PROJECT_ID': os.getenv('FIREBASE_PROJECT_ID', ''),
+    'FIREBASE_STORAGE_BUCKET': os.getenv('FIREBASE_STORAGE_BUCKET', ''),
+    'FIREBASE_MESSAGING_SENDER_ID': os.getenv('FIREBASE_MESSAGING_SENDER_ID', ''),
+    'FIREBASE_APP_ID': os.getenv('FIREBASE_APP_ID', '')
+}
+
+# Valida se todas as variáveis Web estão configuradas
+missing_web_vars = [k for k, v in firebase_web_config.items() if not v]
+
+if missing_web_vars:
+    print(f"⚠️  ATENÇÃO: Variáveis do Firebase Web SDK faltando no .env:")
+    for var in missing_web_vars:
+        print(f"   - {var}")
+    print("\n💡 Obtenha essas credenciais em:")
+    print("   Console Firebase > Configurações do Projeto > Seus aplicativos > Aplicativo da Web\n")
+else:
+    print("✅ Firebase Web SDK configurado com sucesso!")
+    print(f"   Project ID: {firebase_web_config['FIREBASE_PROJECT_ID']}")
+    print(f"   Auth Domain: {firebase_web_config['FIREBASE_AUTH_DOMAIN']}\n")
+
+# Adiciona as configurações ao app.config para os templates
+app.config.update(firebase_web_config)
 
 # Inicializa Geocoder
 geolocator = Nominatim(user_agent="comercial-app")
