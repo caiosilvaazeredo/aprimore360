@@ -3,112 +3,111 @@
 {% block title %}Agenda - ComercialPRO{% endblock %}
 
 {% block content %}
-<div class="agenda-content">
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h4 class="mb-1">Agenda de Compromissos</h4>
-            <p class="text-muted mb-0">Gerencie seus compromissos e visitas</p>
+<div class="modern-container">
+    <!-- Header estilo Teams -->
+    <div class="teams-header">
+        <div class="header-left">
+            <i class="fas fa-calendar-alt header-icon"></i>
+            <div>
+                <h1 class="header-title">Agenda</h1>
+                <p class="header-subtitle">Gerencie seus compromissos e reuniões</p>
+            </div>
         </div>
-        <button class="btn btn-primary" onclick="openCompromissoModal()">
-            <i class="fas fa-plus me-2"></i>Novo Compromisso
+        <button class="btn-teams-primary" onclick="openCompromissoModal()">
+            <i class="fas fa-plus"></i>
+            Novo Compromisso
         </button>
     </div>
-    
+
     <!-- Calendar Container -->
-    <div class="card-custom">
-        <div class="card-body p-4">
-            <div id="calendar"></div>
-        </div>
+    <div class="teams-card">
+        <div id="calendar"></div>
     </div>
 </div>
 
 <!-- Modal Novo/Editar Compromisso -->
 <div class="modal fade" id="compromissoModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="compromissoModalTitle">
-                    <i class="fas fa-calendar-plus me-2"></i>Novo Compromisso
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content teams-modal">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold" id="compromissoModalTitle">
+                    <i class="fas fa-calendar-plus me-2 text-primary"></i>Novo Compromisso
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <form id="compromissoForm">
                     <input type="hidden" id="compromissoId">
                     
                     <div class="mb-3">
-                        <label class="form-label">Título *</label>
-                        <input type="text" class="form-control" id="titulo" required placeholder="Ex: Visita ao cliente">
+                        <label class="form-label fw-semibold">Título *</label>
+                        <input type="text" class="form-control teams-input" id="titulo" required 
+                               placeholder="Ex: Visita ao cliente">
                     </div>
                     
-                    <div class="mb-3">
-                        <label class="form-label">Tipo *</label>
-                        <select class="form-select" id="tipo" required onchange="updateTipoIcon()">
-                            <option value="visita">🚗 Visita</option>
-                            <option value="reuniao">🤝 Reunião</option>
-                            <option value="ligacao">📞 Ligação</option>
-                            <option value="entrega">🚚 Entrega</option>
-                            <option value="outro">📋 Outro</option>
-                        </select>
-                    </div>
-                    
-                    <div class="row g-3 mb-3">
+                    <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Data *</label>
-                            <input type="date" class="form-control" id="data" required>
+                            <label class="form-label fw-semibold">Tipo *</label>
+                            <select class="form-select teams-input" id="tipo" required>
+                                <option value="visita">🚗 Visita</option>
+                                <option value="reuniao">🤝 Reunião</option>
+                                <option value="ligacao">📞 Ligação</option>
+                                <option value="entrega">🚚 Entrega</option>
+                                <option value="outro">📋 Outro</option>
+                            </select>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Início *</label>
-                            <input type="time" class="form-control" id="horaInicio" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Fim</label>
-                            <input type="time" class="form-control" id="horaFim">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Cliente</label>
+                            <select class="form-select teams-input" id="clienteId">
+                                <option value="">Selecione...</option>
+                            </select>
                         </div>
                     </div>
                     
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Data *</label>
+                            <input type="date" class="form-control teams-input" id="data" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Hora Início *</label>
+                            <input type="time" class="form-control teams-input" id="horaInicio" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Hora Fim</label>
+                            <input type="time" class="form-control teams-input" id="horaFim">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 mt-3">
+                        <label class="form-label fw-semibold">Local</label>
+                        <input type="text" class="form-control teams-input" id="local" 
+                               placeholder="Endereço ou link da reunião">
+                    </div>
+                    
                     <div class="mb-3">
-                        <label class="form-label">Cliente</label>
-                        <select class="form-select" id="clienteId">
-                            <option value="">Selecione um cliente (opcional)</option>
+                        <label class="form-label fw-semibold">Observações</label>
+                        <textarea class="form-control teams-input" id="observacoes" rows="3" 
+                                  placeholder="Adicione detalhes sobre o compromisso"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Status</label>
+                        <select class="form-select teams-input" id="statusCompromisso">
+                            <option value="pendente">Pendente</option>
+                            <option value="concluido">Concluído</option>
+                            <option value="cancelado">Cancelado</option>
                         </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Local/Endereço</label>
-                        <input type="text" class="form-control" id="local" placeholder="Endereço ou local do compromisso">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Observações</label>
-                        <textarea class="form-control" id="observacoes" rows="3" placeholder="Detalhes adicionais..."></textarea>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Status</label>
-                        <select class="form-select" id="statusCompromisso">
-                            <option value="pendente">⏳ Pendente</option>
-                            <option value="confirmado">✅ Confirmado</option>
-                            <option value="concluido">✔️ Concluído</option>
-                            <option value="cancelado">❌ Cancelado</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="notificar" checked>
-                        <label class="form-check-label" for="notificar">
-                            Enviar notificação de lembrete
-                        </label>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-danger" id="btnDeleteCompromisso" onclick="deleteCompromisso()" style="display:none;">
+            <div class="modal-footer border-0 gap-2">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn-teams-danger" id="btnDeleteCompromisso" 
+                        onclick="deleteCompromisso()" style="display:none;">
                     <i class="fas fa-trash me-2"></i>Excluir
                 </button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="saveCompromisso()">
+                <button type="button" class="btn-teams-primary" onclick="saveCompromisso()">
                     <i class="fas fa-save me-2"></i>Salvar
                 </button>
             </div>
@@ -116,500 +115,406 @@
     </div>
 </div>
 
-<!-- Modal Detalhes do Compromisso -->
-<div class="modal fade" id="detalhesModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-calendar-check me-2"></i>Detalhes do Compromisso
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="detalhesContent">
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-primary" onclick="editCurrentCompromisso()">
-                    <i class="fas fa-edit me-2"></i>Editar
-                </button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <style>
-    .card-custom {
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-        overflow: hidden;
-    }
-    
-    #calendar {
-        font-family: 'Inter', sans-serif;
-    }
-    
-    .fc {
-        --fc-border-color: #e2e8f0;
-        --fc-button-bg-color: #667eea;
-        --fc-button-border-color: #667eea;
-        --fc-button-hover-bg-color: #5a67d8;
-        --fc-button-hover-border-color: #5a67d8;
-        --fc-button-active-bg-color: #4c51bf;
-        --fc-today-bg-color: rgba(102, 126, 234, 0.05);
-    }
-    
-    .fc-toolbar-title {
-        font-size: 1.3rem !important;
-        font-weight: 600 !important;
-    }
-    
-    .fc-button {
-        border-radius: 8px !important;
-        font-weight: 500 !important;
-        padding: 8px 16px !important;
-    }
-    
-    .fc-event {
-        border-radius: 6px !important;
-        padding: 4px 8px !important;
-        font-weight: 500 !important;
-        border: none !important;
-    }
-    
-    .fc-daygrid-event {
-        white-space: normal !important;
-    }
-    
-    .event-visita {
-        background-color: #667eea !important;
-    }
-    
-    .event-reuniao {
-        background-color: #10b981 !important;
-    }
-    
-    .event-ligacao {
-        background-color: #f59e0b !important;
-    }
-    
-    .event-entrega {
-        background-color: #06b6d4 !important;
-    }
-    
-    .event-outro {
-        background-color: #64748b !important;
-    }
-    
-    .compromisso-detalhe {
-        padding: 12px 0;
-        border-bottom: 1px solid #f1f5f9;
-    }
-    
-    .compromisso-detalhe:last-child {
-        border-bottom: none;
-    }
-    
-    .compromisso-detalhe label {
-        font-weight: 600;
-        color: #64748b;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        display: block;
-        margin-bottom: 5px;
-    }
-    
-    .compromisso-detalhe span {
-        font-size: 1rem;
-        color: #1e293b;
-    }
+.modern-container {
+    padding: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.teams-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-icon {
+    font-size: 32px;
+    color: #6264A7;
+}
+
+.header-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #252423;
+    margin: 0;
+}
+
+.header-subtitle {
+    color: #616161;
+    margin: 4px 0 0 0;
+    font-size: 14px;
+}
+
+.btn-teams-primary {
+    background: #6264A7;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.btn-teams-primary:hover {
+    background: #5558a5;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(98, 100, 167, 0.3);
+}
+
+.btn-teams-danger {
+    background: #C4314B;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-teams-danger:hover {
+    background: #a82840;
+}
+
+.teams-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    padding: 24px;
+}
+
+.teams-modal .modal-content {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 25.6px 57.6px rgba(0,0,0,0.22);
+}
+
+.teams-input {
+    border: 1px solid #E1DFDD;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.teams-input:focus {
+    border-color: #6264A7;
+    box-shadow: 0 0 0 1px #6264A7;
+}
+
+/* FullCalendar Styling */
+#calendar {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+.fc {
+    --fc-border-color: #E1DFDD;
+    --fc-button-bg-color: #6264A7;
+    --fc-button-border-color: #6264A7;
+    --fc-button-hover-bg-color: #5558a5;
+    --fc-button-active-bg-color: #4a4d9b;
+    --fc-today-bg-color: rgba(98, 100, 167, 0.1);
+}
+
+.fc-toolbar-title {
+    font-size: 20px !important;
+    font-weight: 600 !important;
+    color: #252423 !important;
+}
+
+.fc-button {
+    border-radius: 4px !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    padding: 8px 16px !important;
+}
+
+.fc-event {
+    border-radius: 4px !important;
+    padding: 4px 8px !important;
+    border: none !important;
+    font-weight: 500 !important;
+}
+
+.fc-event:hover {
+    filter: brightness(0.95);
+    cursor: pointer;
+}
+
+.event-visita { background-color: #6264A7 !important; }
+.event-reuniao { background-color: #10B981 !important; }
+.event-ligacao { background-color: #F59E0B !important; }
+.event-entrega { background-color: #3B82F6 !important; }
+.event-outro { background-color: #6B7280 !important; }
 </style>
 
-<!-- FullCalendar -->
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales/pt-br.global.min.js"></script>
 
 <script>
-    let calendar;
-    let compromissoModal;
-    let detalhesModal;
-    let compromissos = [];
-    let clientes = [];
-    let currentCompromissoId = null;
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        compromissoModal = new bootstrap.Modal(document.getElementById('compromissoModal'));
-        detalhesModal = new bootstrap.Modal(document.getElementById('detalhesModal'));
+let calendar;
+let compromissoModal;
+let compromissos = [];
+let clientes = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    compromissoModal = new bootstrap.Modal(document.getElementById('compromissoModal'));
+    initCalendar();
+    loadClientes();
+    loadCompromissos();
+});
+
+function initCalendar() {
+    const calendarEl = document.getElementById('calendar');
+    calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'pt-br',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        buttonText: {
+            today: 'Hoje',
+            month: 'Mês',
+            week: 'Semana',
+            day: 'Dia'
+        },
+        height: 'auto',
+        navLinks: true,
+        editable: true,
+        selectable: true,
+        selectMirror: true,
+        dayMaxEvents: true,
         
-        initCalendar();
-        loadClientes();
-        loadCompromissos();
+        select: function(info) {
+            openCompromissoModal(info.startStr);
+        },
+        
+        eventClick: function(info) {
+            editCompromisso(info.event.id);
+        },
+        
+        eventDrop: function(info) {
+            updateCompromissoDate(info.event);
+        }
     });
     
-    function initCalendar() {
-        const calendarEl = document.getElementById('calendar');
-        calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            locale: 'pt-br',
-            headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
-            },
-            buttonText: {
-                today: 'Hoje',
-                month: 'Mês',
-                week: 'Semana',
-                day: 'Dia',
-                list: 'Lista'
-            },
-            height: 'auto',
-            navLinks: true,
-            editable: true,
-            dayMaxEvents: true,
-            selectable: true,
-            selectMirror: true,
-            
-            // Clique em data vazia
-            select: function(info) {
-                openCompromissoModal(info.startStr);
-            },
-            
-            // Clique em evento
-            eventClick: function(info) {
-                showCompromissoDetails(info.event);
-            },
-            
-            // Arrastar evento (mudar data)
-            eventDrop: function(info) {
-                updateCompromissoDate(info.event);
-            },
-            
-            // Redimensionar evento
-            eventResize: function(info) {
-                updateCompromissoDate(info.event);
-            }
+    calendar.render();
+}
+
+async function loadClientes() {
+    try {
+        const response = await fetch('/api/clientes');
+        clientes = await response.json();
+        
+        const select = document.getElementById('clienteId');
+        clientes.forEach(c => {
+            const option = document.createElement('option');
+            option.value = c.id;
+            option.textContent = c.fantasia || c.razaoSocial;
+            select.appendChild(option);
         });
-        
-        calendar.render();
+    } catch (error) {
+        console.error('Erro ao carregar clientes:', error);
     }
-    
-    async function loadClientes() {
-        try {
-            const response = await fetch('/api/clientes');
-            clientes = await response.json();
-            
-            const select = document.getElementById('clienteId');
-            clientes.forEach(c => {
-                const option = document.createElement('option');
-                option.value = c.id;
-                option.textContent = c.fantasia;
-                select.appendChild(option);
-            });
-        } catch (error) {
-            console.error('Erro ao carregar clientes:', error);
-        }
-    }
-    
-    async function loadCompromissos() {
-        try {
-            const response = await fetch('/api/compromissos');
-            compromissos = await response.json();
-            
-            // Limpa eventos existentes
-            calendar.removeAllEvents();
-            
-            // Adiciona eventos ao calendário
-            compromissos.forEach(c => {
-                let start = c.data;
-                let end = c.data;
-                
-                if (c.horaInicio || c.hora) {
-                    start += 'T' + (c.horaInicio || c.hora);
-                }
-                
-                if (c.horaFim) {
-                    end += 'T' + c.horaFim;
-                } else if (c.horaInicio || c.hora) {
-                    // Se não tem hora fim, assume 1 hora depois
-                    end = start;
-                }
-                
-                calendar.addEvent({
-                    id: c.id,
-                    title: c.titulo,
-                    start: start,
-                    end: end,
-                    className: 'event-' + (c.tipo || 'outro'),
-                    extendedProps: c
-                });
-            });
-        } catch (error) {
-            console.error('Erro ao carregar compromissos:', error);
-            showToast('Erro ao carregar compromissos', 'danger');
-        }
-    }
-    
-    function openCompromissoModal(date = null) {
-        document.getElementById('compromissoForm').reset();
-        document.getElementById('compromissoId').value = '';
-        document.getElementById('compromissoModalTitle').innerHTML = '<i class="fas fa-calendar-plus me-2"></i>Novo Compromisso';
-        document.getElementById('btnDeleteCompromisso').style.display = 'none';
-        
-        if (date) {
-            document.getElementById('data').value = date;
-        } else {
-            document.getElementById('data').value = new Date().toISOString().split('T')[0];
-        }
-        
-        // Hora padrão
-        document.getElementById('horaInicio').value = '09:00';
-        document.getElementById('horaFim').value = '10:00';
-        
-        compromissoModal.show();
-    }
-    
-    function showCompromissoDetails(event) {
-        const c = event.extendedProps;
-        currentCompromissoId = event.id;
-        
-        const cliente = clientes.find(cl => cl.id === c.clienteId);
-        
-        document.getElementById('detalhesContent').innerHTML = `
-            <div class="compromisso-detalhe">
-                <label>Título</label>
-                <span><strong>${c.titulo}</strong></span>
-            </div>
-            <div class="compromisso-detalhe">
-                <label>Tipo</label>
-                <span>${getTipoEmoji(c.tipo)} ${formatTipo(c.tipo)}</span>
-            </div>
-            <div class="compromisso-detalhe">
-                <label>Data e Hora</label>
-                <span>${formatDate(c.data)} às ${c.horaInicio || c.hora}${c.horaFim ? ' - ' + c.horaFim : ''}</span>
-            </div>
-            ${cliente ? `
-            <div class="compromisso-detalhe">
-                <label>Cliente</label>
-                <span>${cliente.fantasia}</span>
-            </div>
-            ` : ''}
-            ${c.local ? `
-            <div class="compromisso-detalhe">
-                <label>Local</label>
-                <span>${c.local}</span>
-            </div>
-            ` : ''}
-            ${c.observacoes ? `
-            <div class="compromisso-detalhe">
-                <label>Observações</label>
-                <span>${c.observacoes}</span>
-            </div>
-            ` : ''}
-            <div class="compromisso-detalhe">
-                <label>Status</label>
-                <span>${getStatusEmoji(c.status)} ${formatStatus(c.status)}</span>
-            </div>
-        `;
-        
-        detalhesModal.show();
-    }
-    
-    function editCurrentCompromisso() {
-        detalhesModal.hide();
-        
-        const evento = calendar.getEventById(currentCompromissoId);
-        if (!evento) return;
-        
-        const c = evento.extendedProps;
-        
-        document.getElementById('compromissoId').value = currentCompromissoId;
-        document.getElementById('titulo').value = c.titulo || '';
-        document.getElementById('tipo').value = c.tipo || 'outro';
-        document.getElementById('data').value = c.data || '';
-        document.getElementById('horaInicio').value = c.horaInicio || c.hora || '';
-        document.getElementById('horaFim').value = c.horaFim || '';
-        document.getElementById('clienteId').value = c.clienteId || '';
-        document.getElementById('local').value = c.local || '';
-        document.getElementById('observacoes').value = c.observacoes || '';
-        document.getElementById('statusCompromisso').value = c.status || 'pendente';
-        document.getElementById('notificar').checked = c.notificar !== false;
-        
-        document.getElementById('compromissoModalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Editar Compromisso';
-        document.getElementById('btnDeleteCompromisso').style.display = 'inline-block';
-        
-        compromissoModal.show();
-    }
-    
-    async function saveCompromisso() {
-        const id = document.getElementById('compromissoId').value;
-        
-        const titulo = document.getElementById('titulo').value;
-        const tipo = document.getElementById('tipo').value;
-        const data = document.getElementById('data').value;
-        const horaInicio = document.getElementById('horaInicio').value;
-        
-        // Validação obrigatória
-        if (!titulo || !tipo || !data || !horaInicio) {
-            showToast('Preencha todos os campos obrigatórios: Título, Tipo, Data e Hora', 'warning');
+}
+
+async function loadCompromissos() {
+    try {
+        const response = await fetch('/api/compromissos');
+        if (!response.ok) {
+            console.error('Erro ao carregar compromissos:', response.status);
             return;
         }
         
-        const compromissoData = {
-            titulo: titulo,
-            tipo: tipo,
-            data: data,
-            horaInicio: horaInicio,
-            horaFim: document.getElementById('horaFim').value || null,
-            clienteId: document.getElementById('clienteId').value || null,
-            local: document.getElementById('local').value || null,
-            observacoes: document.getElementById('observacoes').value || null,
-            status: document.getElementById('statusCompromisso').value,
-            notificar: document.getElementById('notificar').checked
-        };
+        compromissos = await response.json();
         
-        try {
-            const url = id ? `/api/compromissos/${id}` : '/api/compromissos';
-            const method = id ? 'PUT' : 'POST';
+        calendar.removeAllEvents();
+        
+        compromissos.forEach(c => {
+            let start = c.data;
+            let end = c.data;
             
-            const response = await fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(compromissoData)
+            if (c.horaInicio) {
+                start += 'T' + c.horaInicio;
+                end += 'T' + (c.horaFim || c.horaInicio);
+            }
+            
+            calendar.addEvent({
+                id: c.id,
+                title: c.titulo,
+                start: start,
+                end: end,
+                className: 'event-' + (c.tipo || 'outro'),
+                extendedProps: c
             });
-            
-            const result = await response.json();
-            
-            if (response.ok) {
-                compromissoModal.hide();
-                showToast(id ? 'Compromisso atualizado!' : 'Compromisso criado!', 'success');
-                loadCompromissos();
-            } else {
-                showToast(result.error || 'Erro ao salvar compromisso', 'danger');
-            }
-        } catch (error) {
-            console.error('Erro ao salvar compromisso:', error);
-            showToast('Erro ao salvar compromisso', 'danger');
-        }
-    }
-    
-    async function deleteCompromisso() {
-        const id = document.getElementById('compromissoId').value;
-        if (!id) return;
-        
-        if (!confirm('Tem certeza que deseja excluir este compromisso?')) return;
-        
-        try {
-            const response = await fetch(`/api/compromissos/${id}`, { method: 'DELETE' });
-            
-            if (response.ok) {
-                compromissoModal.hide();
-                showToast('Compromisso excluído!', 'success');
-                loadCompromissos();
-            } else {
-                const error = await response.json();
-                showToast(error.error || 'Erro ao excluir', 'danger');
-            }
-        } catch (error) {
-            console.error('Erro ao excluir compromisso:', error);
-            showToast('Erro ao excluir compromisso', 'danger');
-        }
-    }
-    
-    async function updateCompromissoDate(event) {
-        const id = event.id;
-        const newDate = event.start.toISOString().split('T')[0];
-        const newStart = event.start.toTimeString().slice(0, 5);
-        const newEnd = event.end ? event.end.toTimeString().slice(0, 5) : null;
-        
-        try {
-            const response = await fetch(`/api/compromissos/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    data: newDate,
-                    horaInicio: newStart,
-                    horaFim: newEnd
-                })
-            });
-            
-            if (response.ok) {
-                showToast('Compromisso atualizado!', 'success');
-            } else {
-                event.revert();
-                showToast('Erro ao atualizar', 'danger');
-            }
-        } catch (error) {
-            event.revert();
-            showToast('Erro ao atualizar', 'danger');
-        }
-    }
-    
-    function getTipoEmoji(tipo) {
-        const emojis = {
-            'visita': '🚗',
-            'reuniao': '🤝',
-            'ligacao': '📞',
-            'entrega': '🚚',
-            'outro': '📋'
-        };
-        return emojis[tipo] || '📋';
-    }
-    
-    function formatTipo(tipo) {
-        const tipos = {
-            'visita': 'Visita',
-            'reuniao': 'Reunião',
-            'ligacao': 'Ligação',
-            'entrega': 'Entrega',
-            'outro': 'Outro'
-        };
-        return tipos[tipo] || tipo;
-    }
-    
-    function getStatusEmoji(status) {
-        const emojis = {
-            'pendente': '⏳',
-            'confirmado': '✅',
-            'concluido': '✔️',
-            'cancelado': '❌'
-        };
-        return emojis[status] || '⏳';
-    }
-    
-    function formatStatus(status) {
-        const statuses = {
-            'pendente': 'Pendente',
-            'confirmado': 'Confirmado',
-            'concluido': 'Concluído',
-            'cancelado': 'Cancelado'
-        };
-        return statuses[status] || status;
-    }
-    
-    function formatDate(dateStr) {
-        if (!dateStr) return '';
-        const date = new Date(dateStr + 'T00:00:00');
-        return date.toLocaleDateString('pt-BR', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
         });
+    } catch (error) {
+        console.error('Erro ao carregar compromissos:', error);
+    }
+}
+
+function openCompromissoModal(date = null) {
+    document.getElementById('compromissoForm').reset();
+    document.getElementById('compromissoId').value = '';
+    document.getElementById('compromissoModalTitle').innerHTML = 
+        '<i class="fas fa-calendar-plus me-2 text-primary"></i>Novo Compromisso';
+    document.getElementById('btnDeleteCompromisso').style.display = 'none';
+    
+    if (date) {
+        document.getElementById('data').value = date;
+    } else {
+        document.getElementById('data').value = new Date().toISOString().split('T')[0];
     }
     
-    function showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `alert alert-${type} position-fixed`;
-        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-        toast.innerHTML = `
-            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'times-circle'} me-2"></i>
-            ${message}
-        `;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+    document.getElementById('horaInicio').value = '09:00';
+    document.getElementById('statusCompromisso').value = 'pendente';
+    
+    compromissoModal.show();
+}
+
+function editCompromisso(id) {
+    const c = compromissos.find(comp => comp.id === id);
+    if (!c) return;
+    
+    document.getElementById('compromissoId').value = id;
+    document.getElementById('titulo').value = c.titulo || '';
+    document.getElementById('tipo').value = c.tipo || 'outro';
+    document.getElementById('data').value = c.data || '';
+    document.getElementById('horaInicio').value = c.horaInicio || '';
+    document.getElementById('horaFim').value = c.horaFim || '';
+    document.getElementById('clienteId').value = c.clienteId || '';
+    document.getElementById('local').value = c.local || '';
+    document.getElementById('observacoes').value = c.observacoes || '';
+    document.getElementById('statusCompromisso').value = c.status || 'pendente';
+    
+    document.getElementById('compromissoModalTitle').innerHTML = 
+        '<i class="fas fa-edit me-2 text-primary"></i>Editar Compromisso';
+    document.getElementById('btnDeleteCompromisso').style.display = 'inline-flex';
+    
+    compromissoModal.show();
+}
+
+async function saveCompromisso() {
+    const id = document.getElementById('compromissoId').value;
+    
+    const data = {
+        titulo: document.getElementById('titulo').value,
+        tipo: document.getElementById('tipo').value,
+        data: document.getElementById('data').value,
+        horaInicio: document.getElementById('horaInicio').value,
+        horaFim: document.getElementById('horaFim').value || null,
+        clienteId: document.getElementById('clienteId').value || null,
+        local: document.getElementById('local').value || null,
+        observacoes: document.getElementById('observacoes').value || null,
+        status: document.getElementById('statusCompromisso').value
+    };
+    
+    if (!data.titulo || !data.data || !data.horaInicio) {
+        alert('Preencha os campos obrigatórios');
+        return;
     }
+    
+    try {
+        const url = id ? `/api/compromissos/${id}` : '/api/compromissos';
+        const method = id ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            compromissoModal.hide();
+            showToast(id ? 'Compromisso atualizado!' : 'Compromisso criado!', 'success');
+            loadCompromissos();
+        } else {
+            const error = await response.json();
+            showToast(error.error || 'Erro ao salvar', 'danger');
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast('Erro ao salvar compromisso', 'danger');
+    }
+}
+
+async function deleteCompromisso() {
+    const id = document.getElementById('compromissoId').value;
+    if (!id || !confirm('Tem certeza que deseja excluir?')) return;
+    
+    try {
+        const response = await fetch(`/api/compromissos/${id}`, { method: 'DELETE' });
+        
+        if (response.ok) {
+            compromissoModal.hide();
+            showToast('Compromisso excluído!', 'success');
+            loadCompromissos();
+        } else {
+            showToast('Erro ao excluir', 'danger');
+        }
+    } catch (error) {
+        showToast('Erro ao excluir', 'danger');
+    }
+}
+
+async function updateCompromissoDate(event) {
+    const id = event.id;
+    const newDate = event.start.toISOString().split('T')[0];
+    
+    try {
+        await fetch(`/api/compromissos/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: newDate })
+        });
+        
+        showToast('Data atualizada!', 'success');
+        loadCompromissos();
+    } catch (error) {
+        console.error('Erro:', error);
+    }
+}
+
+function showToast(message, type) {
+    const colors = {
+        success: '#10B981',
+        danger: '#C4314B',
+        warning: '#F59E0B'
+    };
+    
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 24px;
+        right: 24px;
+        background: ${colors[type] || '#6264A7'};
+        color: white;
+        padding: 16px 24px;
+        border-radius: 4px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        font-weight: 600;
+        z-index: 9999;
+        animation: slideIn 0.3s ease;
+    `;
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
 </script>
 {% endblock %}

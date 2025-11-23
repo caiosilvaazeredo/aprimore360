@@ -1,479 +1,116 @@
 {% extends "base.html" %}
 
-{% block title %}Mapa - ComercialPRO{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
-<style>
-    .map-container {
-        position: relative;
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    }
-    
-    #map {
-        height: 600px;
-        width: 100%;
-        background: #f0f0f0;
-    }
-    
-    .map-controls {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
-        background: white;
-        border-radius: 15px;
-        padding: 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-        width: 320px;
-        max-height: calc(100% - 40px);
-        overflow-y: auto;
-    }
-    
-    .map-controls h5 {
-        font-weight: 600;
-        color: #1e293b;
-        margin-bottom: 15px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    
-    .control-group {
-        margin-bottom: 15px;
-    }
-    
-    .control-group label {
-        font-size: 0.85rem;
-        font-weight: 500;
-        color: #475569;
-        margin-bottom: 8px;
-        display: block;
-    }
-    
-    .control-group .form-control,
-    .control-group .form-select {
-        border-radius: 10px;
-        font-size: 0.9rem;
-    }
-    
-    .map-style-options {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-    }
-    
-    .map-style-option {
-        text-align: center;
-        padding: 10px;
-        border: 2px solid #e2e8f0;
-        border-radius: 10px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    
-    .map-style-option:hover {
-        border-color: var(--primary);
-    }
-    
-    .map-style-option.active {
-        border-color: var(--primary);
-        background: rgba(102, 126, 234, 0.1);
-    }
-    
-    .map-style-option i {
-        font-size: 1.5rem;
-        color: var(--primary);
-        margin-bottom: 5px;
-        display: block;
-    }
-    
-    .map-style-option span {
-        font-size: 0.75rem;
-        font-weight: 500;
-        color: #64748b;
-    }
-    
-    .color-picker-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .color-picker-wrapper input[type="color"] {
-        width: 50px;
-        height: 35px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-    }
-    
-    .route-info {
-        background: white;
-        border-radius: 15px;
-        padding: 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        margin-top: 20px;
-    }
-    
-    .route-info h5 {
-        font-weight: 600;
-        color: #1e293b;
-        margin-bottom: 15px;
-    }
-    
-    .route-stats {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-    
-    .route-stat {
-        text-align: center;
-        padding: 15px;
-        background: #f8fafc;
-        border-radius: 10px;
-    }
-    
-    .route-stat h4 {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin-bottom: 5px;
-    }
-    
-    .route-stat.primary h4 {
-        color: var(--primary);
-    }
-    
-    .route-stat.success h4 {
-        color: #10b981;
-    }
-    
-    .route-stat.warning h4 {
-        color: #f59e0b;
-    }
-    
-    .route-stat p {
-        margin: 0;
-        font-size: 0.85rem;
-        color: #64748b;
-    }
-    
-    .route-sequence {
-        max-height: 200px;
-        overflow-y: auto;
-    }
-    
-    .route-stop {
-        display: flex;
-        align-items: center;
-        padding: 10px;
-        background: #f8fafc;
-        border-radius: 10px;
-        margin-bottom: 8px;
-        transition: all 0.3s ease;
-    }
-    
-    .route-stop:hover {
-        background: rgba(102, 126, 234, 0.1);
-    }
-    
-    .route-stop-number {
-        width: 30px;
-        height: 30px;
-        background: var(--primary);
-        color: white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: 0.85rem;
-        margin-right: 12px;
-        flex-shrink: 0;
-    }
-    
-    .route-stop-info h6 {
-        font-weight: 600;
-        color: #1e293b;
-        margin: 0 0 3px 0;
-        font-size: 0.9rem;
-    }
-    
-    .route-stop-info p {
-        margin: 0;
-        font-size: 0.8rem;
-        color: #64748b;
-    }
-    
-    .client-filter {
-        background: white;
-        border-radius: 15px;
-        padding: 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-    }
-    
-    .client-list {
-        max-height: 300px;
-        overflow-y: auto;
-    }
-    
-    .client-item {
-        display: flex;
-        align-items: center;
-        padding: 10px;
-        border-bottom: 1px solid #f1f5f9;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    
-    .client-item:hover {
-        background: rgba(102, 126, 234, 0.05);
-    }
-    
-    .client-item.selected {
-        background: rgba(102, 126, 234, 0.1);
-    }
-    
-    .client-item input {
-        margin-right: 12px;
-    }
-    
-    .client-item-info h6 {
-        font-weight: 500;
-        color: #1e293b;
-        margin: 0 0 3px 0;
-        font-size: 0.9rem;
-    }
-    
-    .client-item-info p {
-        margin: 0;
-        font-size: 0.8rem;
-        color: #64748b;
-    }
-    
-    .toggle-control {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    
-    .form-switch {
-        padding-left: 3em;
-    }
-    
-    .form-switch .form-check-input {
-        width: 3em;
-        height: 1.5em;
-    }
-    
-    .btn-optimize {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-        border: none;
-        border-radius: 10px;
-        padding: 12px 25px;
-        font-weight: 600;
-        color: white;
-        width: 100%;
-        transition: all 0.3s ease;
-    }
-    
-    .btn-optimize:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-        color: white;
-    }
-    
-    .btn-clear {
-        background: #f1f5f9;
-        border: none;
-        border-radius: 10px;
-        padding: 12px 25px;
-        font-weight: 600;
-        color: #64748b;
-        width: 100%;
-        transition: all 0.3s ease;
-    }
-    
-    .btn-clear:hover {
-        background: #e2e8f0;
-    }
-    
-    @media (max-width: 768px) {
-        .map-controls {
-            position: static;
-            width: 100%;
-            margin-bottom: 20px;
-            max-height: none;
-        }
-        
-        #map {
-            height: 400px;
-        }
-    }
-</style>
-{% endblock %}
+{% block title %}Mapa de Clientes - ComercialPRO{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
+    <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="mb-1">Mapa de Clientes</h2>
+            <h4 class="mb-1"><i class="fas fa-map-marked-alt me-2"></i>Mapa de Clientes</h4>
             <p class="text-muted mb-0">Visualize e otimize suas rotas de visitas</p>
         </div>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#settingsModal">
-            <i class="fas fa-cog me-2"></i>Configurações
-        </button>
+        <div class="btn-group">
+            <button class="btn btn-outline-primary" onclick="toggleView()" id="btnToggleView">
+                <i class="fas fa-project-diagram me-2"></i>Ver Polígono
+            </button>
+            <button class="btn btn-primary" onclick="loadClientes()">
+                <i class="fas fa-sync-alt me-2"></i>Atualizar
+            </button>
+        </div>
     </div>
-    
-    <div class="row">
-        <div class="col-lg-4">
-            <!-- Client Filter -->
-            <div class="client-filter">
-                <h5 class="mb-3">
-                    <i class="fas fa-filter me-2"></i>Selecionar Clientes
-                </h5>
-                <div class="mb-3">
-                    <input type="text" class="form-control" id="searchClient" placeholder="Buscar cliente...">
-                </div>
-                <div class="d-flex justify-content-between mb-3">
-                    <button class="btn btn-sm btn-outline-primary" onclick="selectAllClients()">
-                        Selecionar Todos
-                    </button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="deselectAllClients()">
-                        Limpar Seleção
-                    </button>
-                </div>
-                <div class="client-list" id="clientList">
-                    <p class="text-center text-muted">Carregando clientes...</p>
+
+    <div class="row g-3">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="fas fa-users me-2"></i>Clientes</h6>
+                    
+                    <input type="text" class="form-control mb-3" id="searchCliente" 
+                           placeholder="Buscar cliente..." onkeyup="filterClientes()">
+                    
+                    <div class="d-grid gap-2 mb-3">
+                        <button class="btn btn-sm btn-outline-primary" onclick="selectAll()">
+                            Selecionar Todos
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="deselectAll()">
+                            Limpar Seleção
+                        </button>
+                    </div>
+                    
+                    <div id="clientesList" style="max-height: 400px; overflow-y: auto;">
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
+                            <p>Carregando...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Selecionados:</span>
+                            <strong id="selectedCount">0</strong>
+                        </div>
+                        <button class="btn btn-success w-100" onclick="otimizarRota()" id="btnOtimizar" disabled>
+                            <i class="fas fa-route me-2"></i>Otimizar Rota
+                        </button>
+                    </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Map Area -->
+        <div class="col-md-9">
+            <!-- Map View -->
+            <div class="card" id="mapView">
+                <div id="map" style="height: 600px; border-radius: 10px;"></div>
+            </div>
             
-            <!-- Route Actions -->
-            <div class="mb-3">
-                <button class="btn btn-optimize mb-2" onclick="optimizeRoute()">
-                    <i class="fas fa-route me-2"></i>Otimizar Rota
-                </button>
-                <button class="btn btn-clear" onclick="clearRoute()">
-                    <i class="fas fa-times me-2"></i>Limpar Rota
-                </button>
+            <!-- Polygon View -->
+            <div class="card" id="polygonView" style="display: none;">
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <h5><i class="fas fa-project-diagram me-2"></i>Visualização de Polígono</h5>
+                        <p class="text-muted">Representação geométrica das distâncias entre clientes</p>
+                    </div>
+                    <svg id="polygonSvg" width="100%" height="500"></svg>
+                    <div id="polygonInfo" class="mt-4"></div>
+                </div>
             </div>
             
             <!-- Route Info -->
-            <div class="route-info" id="routeInfo" style="display: none;">
-                <h5><i class="fas fa-info-circle me-2"></i>Informações da Rota</h5>
-                <div class="route-stats">
-                    <div class="route-stat primary">
-                        <h4 id="routeDistance">0 km</h4>
-                        <p>Distância Total</p>
-                    </div>
-                    <div class="route-stat success">
-                        <h4 id="routeTime">0 min</h4>
-                        <p>Tempo Estimado</p>
-                    </div>
-                    <div class="route-stat warning">
-                        <h4 id="routeStops">0</h4>
-                        <p>Paradas</p>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <small class="text-muted">
-                        <i class="fas fa-leaf me-2"></i>
-                        Economia estimada: <strong id="routeSavings">0 km</strong>
-                    </small>
-                </div>
-                <h6>Sequência de Visitas:</h6>
-                <div class="route-sequence" id="routeSequence">
-                    <!-- Route stops will be inserted here -->
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-8">
-            <div class="map-container">
-                <div id="map"></div>
-                
-                <!-- Quick Controls -->
-                <div class="map-controls">
-                    <h5>
-                        Controles
-                        <button class="btn btn-sm btn-link" onclick="toggleControls()">
-                            <i class="fas fa-chevron-up" id="controlsToggle"></i>
-                        </button>
-                    </h5>
-                    <div id="controlsContent">
-                        <div class="control-group">
-                            <label>Estilo do Mapa</label>
-                            <div class="map-style-options">
-                                <div class="map-style-option active" onclick="changeMapStyle('streets')">
-                                    <i class="fas fa-road"></i>
-                                    <span>Ruas</span>
-                                </div>
-                                <div class="map-style-option" onclick="changeMapStyle('satellite')">
-                                    <i class="fas fa-satellite"></i>
-                                    <span>Satélite</span>
-                                </div>
-                                <div class="map-style-option" onclick="changeMapStyle('terrain')">
-                                    <i class="fas fa-mountain"></i>
-                                    <span>Terreno</span>
+            <div class="card mt-3" id="routeInfo" style="display: none;">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-info-circle me-2"></i>Informações da Rota
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="stat-box">
+                                <i class="fas fa-road text-primary"></i>
+                                <div>
+                                    <div class="stat-value" id="routeDistance">0 km</div>
+                                    <div class="stat-label">Distância Total</div>
                                 </div>
                             </div>
                         </div>
-                        
-                        <div class="control-group">
-                            <label>Cor dos Marcadores</label>
-                            <div class="color-picker-wrapper">
-                                <input type="color" id="markerColor" value="#667eea" onchange="updateMarkerColor()">
-                                <span id="markerColorText">#667eea</span>
-                            </div>
-                        </div>
-                        
-                        <div class="control-group">
-                            <label>Cor da Rota</label>
-                            <div class="color-picker-wrapper">
-                                <input type="color" id="routeColor" value="#10b981" onchange="updateRouteColor()">
-                                <span id="routeColorText">#10b981</span>
-                            </div>
-                        </div>
-                        
-                        <div class="control-group">
-                            <div class="toggle-control">
-                                <label class="mb-0">Agrupar Marcadores</label>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="clusterMarkers" checked onchange="toggleClustering()">
+                        <div class="col-md-4">
+                            <div class="stat-box">
+                                <i class="fas fa-clock text-success"></i>
+                                <div>
+                                    <div class="stat-value" id="routeTime">0 min</div>
+                                    <div class="stat-label">Tempo Estimado</div>
                                 </div>
                             </div>
                         </div>
-                        
-                        <div class="control-group">
-                            <div class="toggle-control">
-                                <label class="mb-0">Mostrar Raio</label>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="showRadius" onchange="toggleRadius()">
+                        <div class="col-md-4">
+                            <div class="stat-box">
+                                <i class="fas fa-map-marker-alt text-danger"></i>
+                                <div>
+                                    <div class="stat-value" id="routeStops">0</div>
+                                    <div class="stat-label">Paradas</div>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div class="control-group" id="radiusControl" style="display: none;">
-                            <label>Raio (km): <span id="radiusValue">5</span></label>
-                            <input type="range" class="form-range" id="radiusRange" min="1" max="50" value="5" onchange="updateRadius()">
-                        </div>
-                        
-                        <div class="control-group">
-                            <label>Espessura da Rota</label>
-                            <input type="range" class="form-range" id="routeWeight" min="2" max="10" value="4" onchange="updateRouteWeight()">
-                        </div>
-                        
-                        <div class="control-group">
-                            <button class="btn btn-sm btn-outline-primary w-100" onclick="saveMapConfig()">
-                                <i class="fas fa-save me-2"></i>Salvar Configurações
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -482,517 +119,475 @@
     </div>
 </div>
 
-<!-- Settings Modal -->
-<div class="modal fade" id="settingsModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Configurações Avançadas</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Ponto de Partida</label>
-                    <select class="form-select" id="startPoint">
-                        <option value="current">Localização Atual</option>
-                        <option value="office">Escritório</option>
-                        <option value="custom">Personalizado</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Velocidade Média (km/h)</label>
-                    <input type="number" class="form-control" id="avgSpeed" value="30">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Tempo por Visita (minutos)</label>
-                    <input type="number" class="form-control" id="visitTime" value="30">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Filtrar por Status</label>
-                    <select class="form-select" id="statusFilter">
-                        <option value="">Todos</option>
-                        <option value="ativo">Apenas Ativos</option>
-                        <option value="inativo">Apenas Inativos</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                <button type="button" class="btn btn-primary" onclick="applySettings()">
-                    Aplicar
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-{% block extra_js %}
+<style>
+.card {
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    border: none;
+}
+
+.card-title {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.cliente-item {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cliente-item:hover {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+.cliente-item.selected {
+    background: #e0e7ff;
+    border-color: #6366f1;
+}
+
+.cliente-item input[type="checkbox"] {
+    accent-color: #6366f1;
+    width: 18px;
+    height: 18px;
+}
+
+.cliente-info h6 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.cliente-info p {
+    margin: 0;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.stat-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.stat-box i {
+    font-size: 28px;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+#map {
+    z-index: 1;
+}
+
+.leaflet-popup-content {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.leaflet-popup-content h6 {
+    margin: 0 0 8px 0;
+    font-weight: 600;
+}
+
+.leaflet-popup-content p {
+    margin: 4px 0;
+    font-size: 13px;
+}
+</style>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
 <script>
-    let map;
-    let markers = [];
-    let markerCluster;
-    let routeLayer;
-    let radiusCircle;
-    let clients = [];
-    let selectedClients = [];
-    let currentRoute = null;
-    let mapConfig = {
-        style: 'streets',
-        markerColor: '#667eea',
-        routeColor: '#10b981',
-        clustering: true,
-        showRadius: false,
-        radiusKm: 5,
-        routeWeight: 4
-    };
+let map;
+let clientes = [];
+let selectedClientes = [];
+let markers = [];
+let routeLine = null;
+let currentView = 'map';
+
+document.addEventListener('DOMContentLoaded', function() {
+    initMap();
+    loadClientes();
+});
+
+function initMap() {
+    map = L.map('map').setView([-23.5505, -46.6333], 11);
     
-    // Map tile layers
-    const tileLayers = {
-        streets: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }),
-        satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '© Esri'
-        }),
-        terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenTopoMap'
-        })
-    };
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+}
+
+async function loadClientes() {
+    try {
+        console.log('[MAPA] Carregando clientes...');
+        
+        const response = await fetch('/api/mapa/clientes');
+        
+        console.log('[MAPA] Status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('[MAPA] Dados recebidos:', data);
+        
+        // Tratamento: pode vir {clientes: []} ou diretamente []
+        if (Array.isArray(data)) {
+            clientes = data;
+        } else if (data.clientes && Array.isArray(data.clientes)) {
+            clientes = data.clientes;
+        } else {
+            console.warn('[MAPA] Formato inesperado:', data);
+            clientes = [];
+        }
+        
+        console.log('[MAPA] Total de clientes:', clientes.length);
+        
+        renderClientesList();
+        addMarkersToMap();
+        
+    } catch (error) {
+        console.error('[ERRO] loadClientes:', error);
+        
+        document.getElementById('clientesList').innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
+                <p class="text-danger mb-2">Erro ao carregar clientes</p>
+                <small class="text-muted d-block mb-2">${error.message}</small>
+                <button class="btn btn-sm btn-primary" onclick="loadClientes()">
+                    <i class="fas fa-sync-alt me-1"></i>Tentar Novamente
+                </button>
+                <a href="/clientes" class="btn btn-sm btn-outline-primary mt-2 d-block">
+                    <i class="fas fa-plus me-1"></i>Cadastrar Cliente
+                </a>
+            </div>
+        `;
+    }
+}
+
+function renderClientesList() {
+    const container = document.getElementById('clientesList');
     
-    // Initialize map
-    document.addEventListener('DOMContentLoaded', function() {
-        map = L.map('map').setView([-23.5505, -46.6333], 11);
-        tileLayers.streets.addTo(map);
-        
-        markerCluster = L.markerClusterGroup();
-        map.addLayer(markerCluster);
-        
-        loadClients();
-        loadMapConfig();
+    if (!Array.isArray(clientes)) {
+        console.error('[ERRO] clientes não é um array:', clientes);
+        clientes = [];
+    }
+    
+    if (clientes.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-inbox fa-2x mb-2"></i>
+                <p>Nenhum cliente com localização</p>
+                <a href="/clientes" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus me-1"></i>Cadastrar Cliente
+                </a>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = clientes.map(c => `
+        <div class="cliente-item ${selectedClientes.includes(c.id) ? 'selected' : ''}" 
+             onclick="toggleCliente('${c.id}')">
+            <input type="checkbox" ${selectedClientes.includes(c.id) ? 'checked' : ''} 
+                   onclick="event.stopPropagation(); toggleCliente('${c.id}')">
+            <div class="cliente-info">
+                <h6>${c.nome || 'Sem nome'}</h6>
+                <p><i class="fas fa-map-marker-alt me-1"></i>${(c.endereco || 'Sem endereço').substring(0, 30)}...</p>
+            </div>
+        </div>
+    `).join('');
+    
+    updateSelectedCount();
+}
+
+function filterClientes() {
+    const search = document.getElementById('searchCliente').value.toLowerCase();
+    const filtered = clientes.filter(c => 
+        (c.nome || '').toLowerCase().includes(search) ||
+        (c.endereco || '').toLowerCase().includes(search)
+    );
+    
+    const container = document.getElementById('clientesList');
+    container.innerHTML = filtered.map(c => `
+        <div class="cliente-item ${selectedClientes.includes(c.id) ? 'selected' : ''}" 
+             onclick="toggleCliente('${c.id}')">
+            <input type="checkbox" ${selectedClientes.includes(c.id) ? 'checked' : ''}>
+            <div class="cliente-info">
+                <h6>${c.nome || 'Sem nome'}</h6>
+                <p><i class="fas fa-map-marker-alt me-1"></i>${(c.endereco || 'Sem endereço').substring(0, 30)}...</p>
+            </div>
+        </div>
+    `).join('');
+}
+
+function addMarkersToMap() {
+    // Remove marcadores anteriores
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+    
+    if (clientes.length === 0) return;
+    
+    // Adiciona marcadores
+    const bounds = [];
+    
+    clientes.forEach(cliente => {
+        if (cliente.latitude && cliente.longitude) {
+            const marker = L.marker([cliente.latitude, cliente.longitude], {
+                icon: L.divIcon({
+                    className: 'custom-marker',
+                    html: '<div style="background:#6366f1;width:12px;height:12px;border-radius:50%;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>',
+                    iconSize: [16, 16]
+                })
+            });
+            
+            marker.bindPopup(`
+                <h6>${cliente.nome || 'Sem nome'}</h6>
+                <p><i class="fas fa-map-marker-alt me-1"></i>${cliente.endereco || 'Sem endereço'}</p>
+                <p><i class="fas fa-phone me-1"></i>${cliente.telefone || 'N/A'}</p>
+                ${cliente.totalCompras ? `<p><i class="fas fa-dollar-sign me-1"></i>R$ ${cliente.totalCompras.toLocaleString('pt-BR')}</p>` : ''}
+            `);
+            
+            marker.addTo(map);
+            markers.push(marker);
+            bounds.push([cliente.latitude, cliente.longitude]);
+        }
     });
     
-    // Load clients
-    async function loadClients() {
-        try {
-            showLoading();
-            const response = await fetch('/api/mapa/clientes');
-            clients = await response.json();
-            
-            renderClientList();
-            addMarkersToMap();
-            
-        } catch (error) {
-            console.error('Erro ao carregar clientes:', error);
-            showToast('Erro ao carregar clientes', 'error');
-        } finally {
-            hideLoading();
-        }
+    // Ajusta zoom
+    if (bounds.length > 0) {
+        map.fitBounds(bounds, { padding: [50, 50] });
     }
-    
-    // Render client list
-    function renderClientList() {
-        const container = document.getElementById('clientList');
-        const searchTerm = document.getElementById('searchClient').value.toLowerCase();
-        
-        const filtered = clients.filter(c => 
-            c.nome.toLowerCase().includes(searchTerm) ||
-            c.endereco.toLowerCase().includes(searchTerm)
-        );
-        
-        if (filtered.length === 0) {
-            container.innerHTML = '<p class="text-center text-muted">Nenhum cliente encontrado</p>';
-            return;
-        }
-        
-        container.innerHTML = filtered.map(c => `
-            <div class="client-item ${selectedClients.includes(c.id) ? 'selected' : ''}" onclick="toggleClientSelection('${c.id}')">
-                <input type="checkbox" ${selectedClients.includes(c.id) ? 'checked' : ''}>
-                <div class="client-item-info">
-                    <h6>${c.nome}</h6>
-                    <p>${c.endereco}</p>
-                </div>
-            </div>
-        `).join('');
+}
+
+function toggleCliente(id) {
+    const index = selectedClientes.indexOf(id);
+    if (index > -1) {
+        selectedClientes.splice(index, 1);
+    } else {
+        selectedClientes.push(id);
     }
-    
-    // Toggle client selection
-    function toggleClientSelection(clientId) {
-        const index = selectedClients.indexOf(clientId);
-        if (index > -1) {
-            selectedClients.splice(index, 1);
-        } else {
-            selectedClients.push(clientId);
-        }
-        renderClientList();
-        highlightSelectedMarkers();
+    renderClientesList();
+}
+
+function selectAll() {
+    selectedClientes = clientes.map(c => c.id);
+    renderClientesList();
+}
+
+function deselectAll() {
+    selectedClientes = [];
+    renderClientesList();
+    if (routeLine) {
+        map.removeLayer(routeLine);
+        routeLine = null;
     }
+    document.getElementById('routeInfo').style.display = 'none';
+}
+
+function updateSelectedCount() {
+    document.getElementById('selectedCount').textContent = selectedClientes.length;
+    document.getElementById('btnOtimizar').disabled = selectedClientes.length < 2;
+}
+
+async function otimizarRota() {
+    if (selectedClientes.length < 2) return;
     
-    function selectAllClients() {
-        selectedClients = clients.map(c => c.id);
-        renderClientList();
-        highlightSelectedMarkers();
-    }
-    
-    function deselectAllClients() {
-        selectedClients = [];
-        renderClientList();
-        highlightSelectedMarkers();
-    }
-    
-    // Add markers to map
-    function addMarkersToMap() {
-        markerCluster.clearLayers();
-        markers = [];
-        
-        clients.forEach(client => {
-            if (client.latitude && client.longitude) {
-                const marker = L.marker([client.latitude, client.longitude], {
-                    icon: createCustomIcon(mapConfig.markerColor)
-                });
-                
-                marker.bindPopup(`
-                    <div style="min-width: 200px;">
-                        <h6 style="font-weight: 600; margin-bottom: 10px;">${client.nome}</h6>
-                        <p style="margin: 5px 0; font-size: 0.9rem;">
-                            <i class="fas fa-map-marker-alt me-2"></i>${client.endereco}
-                        </p>
-                        <p style="margin: 5px 0; font-size: 0.9rem;">
-                            <i class="fas fa-phone me-2"></i>${client.telefone || 'N/A'}
-                        </p>
-                        <p style="margin: 5px 0; font-size: 0.9rem;">
-                            <i class="fas fa-dollar-sign me-2"></i>R$ ${(client.totalCompras || 0).toLocaleString('pt-BR')}
-                        </p>
-                        <button class="btn btn-sm btn-primary mt-2" onclick="toggleClientSelection('${client.id}')">
-                            ${selectedClients.includes(client.id) ? 'Remover da Rota' : 'Adicionar à Rota'}
-                        </button>
-                    </div>
-                `);
-                
-                marker.clientId = client.id;
-                markers.push(marker);
-                markerCluster.addLayer(marker);
-            }
+    try {
+        const response = await fetch('/api/mapa/otimizar-rota', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clienteIds: selectedClientes })
         });
         
-        if (markers.length > 0) {
-            const group = new L.featureGroup(markers);
-            map.fitBounds(group.getBounds(), { padding: [50, 50] });
-        }
-    }
-    
-    // Create custom icon
-    function createCustomIcon(color) {
-        return L.divIcon({
-            className: 'custom-marker',
-            html: `<div style="
-                background: ${color};
-                width: 30px;
-                height: 30px;
-                border-radius: 50% 50% 50% 0;
-                transform: rotate(-45deg);
-                border: 3px solid white;
-                box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-            "></div>`,
-            iconSize: [30, 30],
-            iconAnchor: [15, 30]
-        });
-    }
-    
-    // Highlight selected markers
-    function highlightSelectedMarkers() {
-        markers.forEach(marker => {
-            const isSelected = selectedClients.includes(marker.clientId);
-            marker.setIcon(createCustomIcon(isSelected ? '#f59e0b' : mapConfig.markerColor));
-        });
-    }
-    
-    // Optimize route
-    async function optimizeRoute() {
-        if (selectedClients.length < 2) {
-            showToast('Selecione pelo menos 2 clientes para otimizar a rota', 'warning');
-            return;
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
         }
         
-        try {
-            showLoading();
-            
-            const response = await fetch('/api/mapa/otimizar-rota', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ clienteIds: selectedClients })
-            });
-            
-            const data = await response.json();
-            currentRoute = data;
-            
-            // Update route info
-            document.getElementById('routeInfo').style.display = 'block';
-            document.getElementById('routeDistance').textContent = data.distanciaTotal + ' km';
-            document.getElementById('routeTime').textContent = data.tempoEstimado + ' min';
-            document.getElementById('routeStops').textContent = data.rota.length;
-            document.getElementById('routeSavings').textContent = data.economia.distancia + ' km';
-            
-            // Update route sequence
-            updateRouteSequence(data.rotaDetalhada || data.rota);
-            
-            // Draw route on map
-            drawRoute(data.rotaDetalhada || data.rota);
-            
-            showToast('Rota otimizada com sucesso!', 'success');
-            
-        } catch (error) {
-            console.error('Erro ao otimizar rota:', error);
-            showToast('Erro ao otimizar rota', 'error');
-        } finally {
-            hideLoading();
-        }
+        const result = await response.json();
+        
+        // Mostra info da rota
+        document.getElementById('routeInfo').style.display = 'block';
+        document.getElementById('routeDistance').textContent = `${result.distanciaTotal} km`;
+        document.getElementById('routeTime').textContent = `${result.tempoEstimado} min`;
+        document.getElementById('routeStops').textContent = selectedClientes.length;
+        
+        // Desenha rota
+        drawRoute(result.rota);
+        
+        showToast('Rota otimizada!', 'success');
+        
+    } catch (error) {
+        console.error('Erro ao otimizar rota:', error);
+        showToast('Erro ao otimizar rota: ' + error.message, 'error');
+    }
+}
+
+function drawRoute(rotaIds) {
+    // Remove rota anterior
+    if (routeLine) {
+        map.removeLayer(routeLine);
     }
     
-    // Update route sequence display
-    function updateRouteSequence(rota) {
-        const container = document.getElementById('routeSequence');
-        
-        if (Array.isArray(rota) && rota.length > 0) {
-            if (typeof rota[0] === 'object') {
-                container.innerHTML = rota.map((stop, i) => `
-                    <div class="route-stop">
-                        <div class="route-stop-number">${i + 1}</div>
-                        <div class="route-stop-info">
-                            <h6>${stop.nome}</h6>
-                            <p>Lat: ${stop.lat.toFixed(4)}, Lng: ${stop.lng.toFixed(4)}</p>
-                        </div>
-                    </div>
-                `).join('');
-            } else {
-                container.innerHTML = rota.map((clientId, i) => {
-                    const client = clients.find(c => c.id === clientId);
-                    return `
-                        <div class="route-stop">
-                            <div class="route-stop-number">${i + 1}</div>
-                            <div class="route-stop-info">
-                                <h6>${client ? client.nome : 'Cliente'}</h6>
-                                <p>${client ? client.endereco : ''}</p>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            }
-        }
-    }
+    // Pega coordenadas
+    const coords = rotaIds.map(id => {
+        const cliente = clientes.find(c => c.id === id);
+        return [cliente.latitude, cliente.longitude];
+    });
     
-    // Draw route on map
-    function drawRoute(rota) {
-        if (routeLayer) {
-            map.removeLayer(routeLayer);
-        }
-        
-        const latlngs = [];
-        
-        if (Array.isArray(rota) && rota.length > 0) {
-            if (typeof rota[0] === 'object' && rota[0].lat) {
-                rota.forEach(stop => {
-                    latlngs.push([stop.lat, stop.lng]);
-                });
-            } else {
-                rota.forEach(clientId => {
-                    const client = clients.find(c => c.id === clientId);
-                    if (client && client.latitude && client.longitude) {
-                        latlngs.push([client.latitude, client.longitude]);
-                    }
-                });
-            }
-        }
-        
-        if (latlngs.length > 1) {
-            routeLayer = L.polyline(latlngs, {
-                color: mapConfig.routeColor,
-                weight: mapConfig.routeWeight,
-                opacity: 0.8,
-                dashArray: '10, 10'
-            }).addTo(map);
-            
-            // Add arrows
-            const decorator = L.polylineDecorator(routeLayer, {
-                patterns: [
-                    {offset: 25, repeat: 100, symbol: L.Symbol.arrowHead({
-                        pixelSize: 15,
-                        polygon: false,
-                        pathOptions: {
-                            stroke: true,
-                            color: mapConfig.routeColor,
-                            weight: mapConfig.routeWeight
-                        }
-                    })}
-                ]
-            });
-            
-            map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
-        }
-    }
+    // Desenha linha
+    routeLine = L.polyline(coords, {
+        color: '#10b981',
+        weight: 4,
+        opacity: 0.8
+    }).addTo(map);
     
-    // Clear route
-    function clearRoute() {
-        if (routeLayer) {
-            map.removeLayer(routeLayer);
-            routeLayer = null;
-        }
-        currentRoute = null;
-        document.getElementById('routeInfo').style.display = 'none';
-        showToast('Rota limpa', 'info');
-    }
-    
-    // Map controls
-    function changeMapStyle(style) {
-        document.querySelectorAll('.map-style-option').forEach(el => el.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-        
-        Object.values(tileLayers).forEach(layer => map.removeLayer(layer));
-        tileLayers[style].addTo(map);
-        mapConfig.style = style;
-    }
-    
-    function updateMarkerColor() {
-        const color = document.getElementById('markerColor').value;
-        document.getElementById('markerColorText').textContent = color;
-        mapConfig.markerColor = color;
-        addMarkersToMap();
-        highlightSelectedMarkers();
-    }
-    
-    function updateRouteColor() {
-        const color = document.getElementById('routeColor').value;
-        document.getElementById('routeColorText').textContent = color;
-        mapConfig.routeColor = color;
-        if (routeLayer) {
-            routeLayer.setStyle({ color: color });
-        }
-    }
-    
-    function toggleClustering() {
-        const enabled = document.getElementById('clusterMarkers').checked;
-        mapConfig.clustering = enabled;
-        
-        if (enabled) {
-            markerCluster.clearLayers();
-            markers.forEach(m => markerCluster.addLayer(m));
-            map.addLayer(markerCluster);
-        } else {
-            map.removeLayer(markerCluster);
-            markers.forEach(m => m.addTo(map));
-        }
-    }
-    
-    function toggleRadius() {
-        const show = document.getElementById('showRadius').checked;
-        mapConfig.showRadius = show;
-        document.getElementById('radiusControl').style.display = show ? 'block' : 'none';
-        
-        if (show) {
-            updateRadius();
-        } else if (radiusCircle) {
-            map.removeLayer(radiusCircle);
-            radiusCircle = null;
-        }
-    }
-    
-    function updateRadius() {
-        const km = document.getElementById('radiusRange').value;
-        document.getElementById('radiusValue').textContent = km;
-        mapConfig.radiusKm = km;
-        
-        if (radiusCircle) {
-            map.removeLayer(radiusCircle);
-        }
-        
-        const center = map.getCenter();
-        radiusCircle = L.circle(center, {
-            radius: km * 1000,
-            color: mapConfig.markerColor,
-            fillColor: mapConfig.markerColor,
-            fillOpacity: 0.1,
-            weight: 2
+    // Adiciona números nos marcadores
+    rotaIds.forEach((id, index) => {
+        const cliente = clientes.find(c => c.id === id);
+        L.marker([cliente.latitude, cliente.longitude], {
+            icon: L.divIcon({
+                className: 'route-marker',
+                html: `<div style="background:#10b981;color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);">${index + 1}</div>`,
+                iconSize: [28, 28]
+            })
         }).addTo(map);
+    });
+    
+    map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+}
+
+function toggleView() {
+    if (currentView === 'map') {
+        document.getElementById('mapView').style.display = 'none';
+        document.getElementById('polygonView').style.display = 'block';
+        document.getElementById('btnToggleView').innerHTML = '<i class="fas fa-map me-2"></i>Ver Mapa';
+        currentView = 'polygon';
+        drawPolygon();
+    } else {
+        document.getElementById('mapView').style.display = 'block';
+        document.getElementById('polygonView').style.display = 'none';
+        document.getElementById('btnToggleView').innerHTML = '<i class="fas fa-project-diagram me-2"></i>Ver Polígono';
+        currentView = 'map';
+    }
+}
+
+function drawPolygon() {
+    const svg = document.getElementById('polygonSvg');
+    const width = svg.clientWidth;
+    const height = 500;
+    
+    if (selectedClientes.length < 3) {
+        svg.innerHTML = `
+            <text x="${width/2}" y="${height/2}" text-anchor="middle" fill="#64748b" font-size="14">
+                Selecione pelo menos 3 clientes para visualizar o polígono
+            </text>
+        `;
+        document.getElementById('polygonInfo').innerHTML = '';
+        return;
     }
     
-    function updateRouteWeight() {
-        const weight = document.getElementById('routeWeight').value;
-        mapConfig.routeWeight = parseInt(weight);
-        if (routeLayer) {
-            routeLayer.setStyle({ weight: weight });
-        }
-    }
+    const selected = clientes.filter(c => selectedClientes.includes(c.id));
     
-    function toggleControls() {
-        const content = document.getElementById('controlsContent');
-        const icon = document.getElementById('controlsToggle');
+    const lats = selected.map(c => c.latitude);
+    const lngs = selected.map(c => c.longitude);
+    
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs);
+    const maxLng = Math.max(...lngs);
+    
+    const padding = 50;
+    
+    const points = selected.map(c => {
+        const x = padding + ((c.longitude - minLng) / (maxLng - minLng)) * (width - 2 * padding);
+        const y = padding + ((maxLat - c.latitude) / (maxLat - minLat)) * (height - 2 * padding);
+        return { x, y, nome: c.nome };
+    });
+    
+    const polygonPoints = points.map(p => `${p.x},${p.y}`).join(' ');
+    
+    svg.innerHTML = `
+        <polygon points="${polygonPoints}" 
+                 fill="rgba(99, 102, 241, 0.2)" 
+                 stroke="#6366f1" 
+                 stroke-width="2" />
         
-        if (content.style.display === 'none') {
-            content.style.display = 'block';
-            icon.classList.remove('fa-chevron-down');
-            icon.classList.add('fa-chevron-up');
-        } else {
-            content.style.display = 'none';
-            icon.classList.remove('fa-chevron-up');
-            icon.classList.add('fa-chevron-down');
-        }
-    }
-    
-    // Save/Load map config
-    async function saveMapConfig() {
-        try {
-            const response = await fetch('/api/mapa/configuracoes', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(mapConfig)
-            });
+        ${points.map((p, i) => {
+            const nextP = points[(i + 1) % points.length];
+            const dist = Math.sqrt(Math.pow(p.x - nextP.x, 2) + Math.pow(p.y - nextP.y, 2));
+            const midX = (p.x + nextP.x) / 2;
+            const midY = (p.y + nextP.y) / 2;
             
-            if (response.ok) {
-                showToast('Configurações salvas!', 'success');
-            }
-        } catch (error) {
-            console.error('Erro ao salvar configurações:', error);
-        }
-    }
+            return `
+                <line x1="${p.x}" y1="${p.y}" x2="${nextP.x}" y2="${nextP.y}" 
+                      stroke="#6366f1" stroke-width="2" stroke-dasharray="5,5" />
+                <circle cx="${p.x}" cy="${p.y}" r="8" fill="#6366f1" />
+                <text x="${p.x}" y="${p.y - 15}" text-anchor="middle" 
+                      font-size="12" font-weight="600" fill="#1e293b">
+                    ${i + 1}. ${(p.nome || 'Cliente').substring(0, 15)}
+                </text>
+                <text x="${midX}" y="${midY}" text-anchor="middle" 
+                      font-size="10" fill="#64748b" font-weight="600">
+                    ${dist.toFixed(0)}px
+                </text>
+            `;
+        }).join('')}
+    `;
     
-    async function loadMapConfig() {
-        try {
-            const response = await fetch('/api/mapa/configuracoes');
-            const config = await response.json();
-            
-            if (config && Object.keys(config).length > 0) {
-                mapConfig = { ...mapConfig, ...config };
-                applyMapConfig();
-            }
-        } catch (error) {
-            console.error('Erro ao carregar configurações:', error);
-        }
-    }
-    
-    function applyMapConfig() {
-        document.getElementById('markerColor').value = mapConfig.markerColor;
-        document.getElementById('markerColorText').textContent = mapConfig.markerColor;
-        document.getElementById('routeColor').value = mapConfig.routeColor;
-        document.getElementById('routeColorText').textContent = mapConfig.routeColor;
-        document.getElementById('clusterMarkers').checked = mapConfig.clustering;
-        document.getElementById('showRadius').checked = mapConfig.showRadius;
-        document.getElementById('radiusRange').value = mapConfig.radiusKm;
-        document.getElementById('radiusValue').textContent = mapConfig.radiusKm;
-        document.getElementById('routeWeight').value = mapConfig.routeWeight;
-        
-        if (mapConfig.showRadius) {
-            document.getElementById('radiusControl').style.display = 'block';
-        }
-    }
-    
-    function applySettings() {
-        bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
-        showToast('Configurações aplicadas!', 'success');
-    }
-    
-    // Search clients
-    document.getElementById('searchClient').addEventListener('input', renderClientList);
+    // Info
+    let html = '<h6 class="mb-3">Ordem de Visitas:</h6><ol class="list-group">';
+    points.forEach((p, i) => {
+        html += `
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span><strong>${i + 1}.</strong> ${p.nome || 'Cliente'}</span>
+                ${i < points.length - 1 ? `<span class="badge bg-primary">→ ${(points[i + 1].nome || 'Cliente').substring(0, 10)}</span>` : ''}
+            </li>
+        `;
+    });
+    html += '</ol>';
+    document.getElementById('polygonInfo').innerHTML = html;
+}
+
+function showToast(message, type) {
+    const colors = { success: '#10b981', error: '#ef4444' };
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed; top: 20px; right: 20px; z-index: 9999;
+        background: ${colors[type] || '#6366f1'}; color: white;
+        padding: 16px 24px; border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        font-weight: 600;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
 </script>
 {% endblock %}

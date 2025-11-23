@@ -159,6 +159,165 @@ def api_login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+
+
+# ============ API - MAPA ============
+
+@app.route('/api/mapa/clientes', methods=['GET'])
+@api_login_required
+def get_mapa_clientes():
+    """Retorna clientes com localização para o mapa"""
+    try:
+        if not db:
+            print("[MAPA] Firestore não inicializado")
+            return jsonify([]), 200
+        
+        print(f"[MAPA] Buscando clientes do vendedor: {current_user.id}")
+        
+        # Busca clientes do vendedor
+        clientes_ref = db.collection('clientes').where('vendedorId', '==', current_user.id)
+        
+        clientes_com_localizacao = []
+        total_clientes = 0
+        
+        for doc in clientes_ref.stream():
+            total_clientes += 1
+            cliente = doc.to_dict()
+            cliente['id'] = doc.id
+            
+            # Apenas clientes com latitude e longitude
+            if cliente.get('latitude') and cliente.get('longitude'):
+                try:
+                    # Formata dados para o mapa
+                    cliente_mapa = {
+                        'id': doc.id,
+                        'nome': cliente.get('fantasia') or cliente.get('razaoSocial', 'Sem nome'),
+                        'endereco': cliente.get('endereco', 'Sem endereço'),
+                        'cidade': cliente.get('cidade', ''),
+                        'telefone': cliente.get('telefone', ''),
+                        'latitude': float(cliente.get('latitude')),
+                        'longitude': float(cliente.get('longitude')),
+                        'status': cliente.get('status', 'prospecto'),
+                        'totalCompras': float(cliente.get('totalCompras', 0))
+                    }
+                    clientes_com_localizacao.append(cliente_mapa)
+                except (ValueError, TypeError) as e:
+                    print(f"[MAPA] Erro ao processar cliente {doc.id}: {e}")
+                    continue
+        
+        print(f"[MAPA] Total de clientes: {total_clientes}")
+        print(f"[MAPA] Com localização: {len(clientes_com_localizacao)}")
+        
+        return jsonify(clientes_com_localizacao), 200
+        
+    except Exception as e:
+        print(f"[ERRO] get_mapa_clientes: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify([]), 200  # Retorna 200 com array vazio para não quebrar frontend
+
+
+@app.route('/api/mapa/otimizar-rota', methods=['POST'])
+@api_login_required
+def otimizar_rota():
+    """Otimiza rota de visitas usando algoritmo nearest neighbor"""
+    try:
+        data = request.get_json()
+        cliente_ids = data.get('clienteIds', [])
+        
+        print(f"[ROTA] Otimizando rota para {len(cliente_ids)} clientes")
+        
+        if len(cliente_ids) < 2:
+            return jsonify({'error': 'Selecione pelo menos 2 clientes'}), 400
+        
+        if not db:
+            return jsonify({'error': 'Firestore não inicializado'}), 500
+        
+        # Busca clientes
+        clientes = []
+        for cliente_id in cliente_ids:
+            try:
+                doc = db.collection('clientes').document(cliente_id).get()
+                if doc.exists:
+                    cliente = doc.to_dict()
+                    cliente['id'] = doc.id
+                    
+                    # Valida coordenadas
+                    if cliente.get('latitude') and cliente.get('longitude'):
+                        clientes.append(cliente)
+            except Exception as e:
+                print(f"[ROTA] Erro ao buscar cliente {cliente_id}: {e}")
+                continue
+        
+        if len(clientes) < 2:
+            return jsonify({'error': 'Clientes não encontrados ou sem localização'}), 404
+        
+        print(f"[ROTA] {len(clientes)} clientes válidos encontrados")
+        
+        # Algoritmo Nearest Neighbor (vizinho mais próximo)
+        def calcular_distancia(c1, c2):
+            """Calcula distância euclidiana entre 2 clientes"""
+            try:
+                lat1, lng1 = float(c1['latitude']), float(c1['longitude'])
+                lat2, lng2 = float(c2['latitude']), float(c2['longitude'])
+                
+                # Fórmula de Haversine simplificada (aproximação)
+                dlat = (lat2 - lat1) * 111  # 1 grau lat ≈ 111 km
+                dlng = (lng2 - lng1) * 111 * 0.85  # ajuste para longitude
+                
+                return (dlat**2 + dlng**2)**0.5
+            except (ValueError, TypeError) as e:
+                print(f"[ROTA] Erro ao calcular distância: {e}")
+                return float('inf')
+        
+        # Inicia na posição atual (primeiro cliente da lista)
+        rota = [clientes[0]['id']]
+        visitados = {clientes[0]['id']}
+        atual = clientes[0]
+        distancia_total = 0
+        
+        # Encontra vizinho mais próximo
+        while len(visitados) < len(clientes):
+            menor_dist = float('inf')
+            proximo = None
+            
+            for cliente in clientes:
+                if cliente['id'] not in visitados:
+                    dist = calcular_distancia(atual, cliente)
+                    if dist < menor_dist:
+                        menor_dist = dist
+                        proximo = cliente
+            
+            if proximo:
+                rota.append(proximo['id'])
+                visitados.add(proximo['id'])
+                distancia_total += menor_dist
+                atual = proximo
+            else:
+                break
+        
+        # Tempo estimado (40 km/h média urbana + 15 min por parada)
+        tempo_viagem = (distancia_total / 40) * 60  # minutos
+        tempo_paradas = len(clientes) * 15
+        tempo_total = tempo_viagem + tempo_paradas
+        
+        resultado = {
+            'rota': rota,
+            'distanciaTotal': round(distancia_total, 2),
+            'tempoEstimado': round(tempo_total, 0),
+            'numeroParadas': len(clientes)
+        }
+        
+        print(f"[ROTA] Otimizada: {len(rota)} paradas, {distancia_total:.1f} km, {tempo_total:.0f} min")
+        
+        return jsonify(resultado), 200
+        
+    except Exception as e:
+        print(f"[ERRO] otimizar_rota: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 # ============ ROTAS DE PÁGINAS ============
 @app.route('/')
 def index():
@@ -950,6 +1109,39 @@ def delete_cliente(cliente_id):
 
 
 
+
+@app.route('/api/compromissos', methods=['GET'])
+@api_login_required
+def get_compromissos():
+    """Lista compromissos do vendedor"""
+    try:
+        if not db:
+            return jsonify([]), 200
+        
+        compromissos_ref = db.collection('compromissos').where('vendedorId', '==', current_user.id)
+        
+        compromissos = []
+        for doc in compromissos_ref.stream():
+            compromisso = doc.to_dict()
+            compromisso['id'] = doc.id
+            
+            if compromisso.get('clienteId'):
+                try:
+                    cliente_doc = db.collection('clientes').document(compromisso['clienteId']).get()
+                    if cliente_doc.exists:
+                        cliente_data = cliente_doc.to_dict()
+                        compromisso['cliente'] = cliente_data.get('fantasia')
+                except:
+                    pass
+            
+            compromissos.append(compromisso)
+        
+        return jsonify(compromissos), 200
+        
+    except Exception as e:
+        print(f"Erro em get_compromissos: {e}")
+        return jsonify([]), 200
+
 # ============ API - PEDIDOS ============
 @app.route('/api/pedidos', methods=['GET'])
 @api_login_required
@@ -1525,48 +1717,6 @@ def relatorio_comissoes():
         return jsonify({'error': str(e)}), 500
 
 # ============ API - MAPA (MELHORADO) ============
-@app.route('/api/mapa/clientes', methods=['GET'])
-@api_login_required
-def get_mapa_clientes():
-    try:
-        if not db:
-            return jsonify([
-                {
-                    'id': '1',
-                    'nome': 'Elegance Store',
-                    'latitude': -23.5629,
-                    'longitude': -46.6674,
-                    'endereco': 'Rua Oscar Freire, 1234',
-                    'telefone': '(11) 98765-4321',
-                    'status': 'ativo',
-                    'ultimaVisita': '2025-01-10'
-                }
-            ]), 200
-        
-        clientes_ref = db.collection('clientes').where('vendedorId', '==', current_user.id)
-        
-        clientes_mapa = []
-        for doc in clientes_ref.stream():
-            cliente = doc.to_dict()
-            if cliente.get('latitude') and cliente.get('longitude'):
-                endereco = cliente.get('endereco', {})
-                clientes_mapa.append({
-                    'id': doc.id,
-                    'nome': cliente.get('fantasia', cliente.get('razaoSocial')),
-                    'latitude': cliente.get('latitude'),
-                    'longitude': cliente.get('longitude'),
-                    'endereco': f"{endereco.get('logradouro', '')}, {endereco.get('numero', '')} - {endereco.get('cidade', '')}",
-                    'telefone': cliente.get('telefone', ''),
-                    'status': cliente.get('status', 'ativo'),
-                    'ultimaVisita': cliente.get('ultimaVisita'),
-                    'totalCompras': cliente.get('totalCompras', 0)
-                })
-        
-        return jsonify(clientes_mapa), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
 @app.route('/api/mapa/configuracoes', methods=['GET'])
 @api_login_required
 def get_mapa_config():
@@ -1606,84 +1756,6 @@ def update_mapa_config():
         })
         
         return jsonify({'message': 'Configurações salvas'}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/mapa/otimizar-rota', methods=['POST'])
-@api_login_required
-def otimizar_rota():
-    try:
-        data = request.json
-        cliente_ids = data.get('clienteIds', [])
-        
-        if not db or not cliente_ids:
-            return jsonify({
-                'rota': cliente_ids,
-                'distanciaTotal': 45.2,
-                'tempoEstimado': 180,
-                'economia': {
-                    'distancia': 12.5,
-                    'tempo': 35
-                }
-            }), 200
-        
-        # Busca coordenadas dos clientes
-        clientes_coords = []
-        for cid in cliente_ids:
-            cliente_doc = db.collection('clientes').document(cid).get()
-            if cliente_doc.exists:
-                cliente = cliente_doc.to_dict()
-                if cliente.get('latitude') and cliente.get('longitude'):
-                    clientes_coords.append({
-                        'id': cid,
-                        'lat': cliente.get('latitude'),
-                        'lng': cliente.get('longitude'),
-                        'nome': cliente.get('fantasia')
-                    })
-        
-        # Algoritmo simples de otimização (nearest neighbor)
-        if len(clientes_coords) > 1:
-            otimizado = [clientes_coords[0]]
-            restantes = clientes_coords[1:]
-            
-            while restantes:
-                ultimo = otimizado[-1]
-                mais_proximo = min(restantes, key=lambda x: geodesic(
-                    (ultimo['lat'], ultimo['lng']),
-                    (x['lat'], x['lng'])
-                ).km)
-                otimizado.append(mais_proximo)
-                restantes.remove(mais_proximo)
-            
-            # Calcula distância total
-            distancia_total = 0
-            for i in range(len(otimizado) - 1):
-                distancia_total += geodesic(
-                    (otimizado[i]['lat'], otimizado[i]['lng']),
-                    (otimizado[i+1]['lat'], otimizado[i+1]['lng'])
-                ).km
-            
-            # Estima tempo (média 30km/h em área urbana + 10min por parada)
-            tempo_estimado = (distancia_total / 30 * 60) + (len(otimizado) * 10)
-            
-            return jsonify({
-                'rota': [c['id'] for c in otimizado],
-                'rotaDetalhada': otimizado,
-                'distanciaTotal': round(distancia_total, 2),
-                'tempoEstimado': int(tempo_estimado),
-                'economia': {
-                    'distancia': round(distancia_total * 0.2, 2),
-                    'tempo': int(tempo_estimado * 0.15)
-                }
-            }), 200
-        
-        return jsonify({
-            'rota': cliente_ids,
-            'distanciaTotal': 0,
-            'tempoEstimado': 0,
-            'economia': {'distancia': 0, 'tempo': 0}
-        }), 200
-        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

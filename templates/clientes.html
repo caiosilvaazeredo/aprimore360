@@ -3,7 +3,7 @@
 {% block title %}Clientes - ComercialPRO{% endblock %}
 
 {% block content %}
-<div class="clientes-content">
+<div class="container-fluid py-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -14,44 +14,37 @@
             <i class="fas fa-plus me-2"></i>Novo Cliente
         </button>
     </div>
-    
-    <!-- Filtros -->
-    <div class="card-custom mb-4">
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                        <input type="text" class="form-control" id="searchCliente" placeholder="Buscar cliente..." oninput="filterClientes()">
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <select class="form-select" id="filterStatus" onchange="filterClientes()">
-                        <option value="">Todos os Status</option>
-                        <option value="ativo">Ativos</option>
-                        <option value="inativo">Inativos</option>
-                        <option value="prospecto">Prospectos</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <select class="form-select" id="filterCategoria" onchange="filterClientes()">
-                        <option value="">Todas as Categorias</option>
-                        <option value="varejo">Varejo</option>
-                        <option value="atacado">Atacado</option>
-                        <option value="distribuidor">Distribuidor</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button class="btn btn-outline-secondary w-100" onclick="exportClientes()">
-                        <i class="fas fa-download me-2"></i>Exportar
-                    </button>
-                </div>
-            </div>
+
+    <!-- Filters -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <input type="text" class="form-control" id="searchCliente" placeholder="Buscar cliente...">
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" id="filterStatus">
+                <option value="">Todos os Status</option>
+                <option value="prospecto">Prospecto</option>
+                <option value="ativo">Ativo</option>
+                <option value="inativo">Inativo</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" id="filterCategoria">
+                <option value="">Todas as Categorias</option>
+                <option value="varejo">Varejo</option>
+                <option value="atacado">Atacado</option>
+                <option value="distribuidor">Distribuidor</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-outline-primary w-100" onclick="loadClientes()">
+                <i class="fas fa-sync-alt me-2"></i>Atualizar
+            </button>
         </div>
     </div>
-    
-    <!-- Lista de Clientes -->
-    <div class="card-custom">
+
+    <!-- Table -->
+    <div class="card">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
                 <thead>
@@ -79,7 +72,7 @@
 
 <!-- Modal Novo/Editar Cliente -->
 <div class="modal fade" id="clienteModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="clienteModalTitle">
@@ -131,7 +124,7 @@
                     
                     <!-- Endereço -->
                     <h6 class="mb-3"><i class="fas fa-map-marker-alt me-2"></i>Endereço</h6>
-                    <div class="row g-3 mb-4">
+                    <div class="row g-3 mb-3">
                         <div class="col-md-3">
                             <label class="form-label">CEP</label>
                             <input type="text" class="form-control" id="cep" onblur="buscarCEP()">
@@ -154,19 +147,31 @@
                         </div>
                     </div>
                     
-                    
-                    <!-- Mapa de Confirmação -->
-                    <div id="mapContainer">
-                        <h6 class="mb-2"><i class="fas fa-map-marked-alt me-2"></i>Confirme a localização no mapa</h6>
-                        <div class="map-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            Arraste o marcador para ajustar a posição exata
+                    <!-- Botões de Localização -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-outline-primary w-100" onclick="usarLocalizacaoAtual()">
+                                <i class="fas fa-crosshairs me-2"></i>Usar Minha Localização
+                            </button>
                         </div>
-                        <div id="clienteMap"></div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-outline-success w-100" onclick="confirmarEndereco()">
+                                <i class="fas fa-map-marker-alt me-2"></i>Confirmar no Mapa
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Mapa Container -->
+                    <div id="mapContainer" style="display: none;" class="mb-4">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Arraste o marcador</strong> para ajustar a posição exata
+                        </div>
+                        <div id="clienteMap" style="height: 350px; border-radius: 8px;"></div>
                         <input type="hidden" id="latitude">
                         <input type="hidden" id="longitude">
                     </div>
-
+                    
                     <!-- Classificação -->
                     <h6 class="mb-3"><i class="fas fa-tags me-2"></i>Classificação</h6>
                     <div class="row g-3">
@@ -212,353 +217,293 @@
     </div>
 </div>
 
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
 <style>
-    .card-custom {
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-        overflow: hidden;
-    }
-    
-    .table th {
-        font-weight: 600;
-        color: #64748b;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        border-bottom: 2px solid #f1f5f9;
-    }
-    
-    .table td {
-        vertical-align: middle;
-        padding: 15px;
-    }
-    
-    .cliente-avatar {
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 600;
-        margin-right: 12px;
-    }
-    
-    .cliente-name {
-        font-weight: 600;
-        color: #1e293b;
-    }
-    
-    .cliente-doc {
-        font-size: 0.85rem;
-        color: #94a3b8;
-    }
-    
-    .status-badge {
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-    
-    .status-ativo {
-        background: rgba(16, 185, 129, 0.1);
-        color: #10b981;
-    }
-    
-    .status-inativo {
-        background: rgba(239, 68, 68, 0.1);
-        color: #ef4444;
-    }
-    
-    .status-prospecto {
-        background: rgba(245, 158, 11, 0.1);
-        color: #f59e0b;
-    }
-    
-    .btn-action {
-        width: 32px;
-        height: 32px;
-        padding: 0;
-        border-radius: 8px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
+.card {
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.badge {
+    padding: 6px 12px;
+    font-weight: 500;
+}
+
+.btn-action {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#mapContainer {
+    background: #f8f9fa;
+    padding: 16px;
+    border-radius: 10px;
+    border: 2px dashed #dee2e6;
+}
+
+#clienteMap {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
 </style>
 
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-    let clientes = [];
-    let clienteModal;
+let clientes = [];
+let clienteModal;
+let clienteMap = null;
+let clienteMarker = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    clienteModal = new bootstrap.Modal(document.getElementById('clienteModal'));
+    loadClientes();
     
-    document.addEventListener('DOMContentLoaded', function() {
-        clienteModal = new bootstrap.Modal(document.getElementById('clienteModal'));
-        loadClientes();
-    });
+    document.getElementById('searchCliente').addEventListener('input', filterClientes);
+    document.getElementById('filterStatus').addEventListener('change', filterClientes);
+    document.getElementById('filterCategoria').addEventListener('change', filterClientes);
+});
+
+async function loadClientes() {
+    try {
+        const response = await fetch('/api/clientes');
+        clientes = await response.json();
+        renderClientes(clientes);
+    } catch (error) {
+        console.error('Erro ao carregar clientes:', error);
+        document.getElementById('clientesTable').innerHTML = `
+            <tr><td colspan="6" class="text-center text-danger py-4">
+                Erro ao carregar clientes
+            </td></tr>
+        `;
+    }
+}
+
+function renderClientes(clientesArray) {
+    const tbody = document.getElementById('clientesTable');
     
-    async function loadClientes() {
-        try {
-            const response = await fetch('/api/clientes');
-            clientes = await response.json();
-            renderClientes(clientes);
-        } catch (error) {
-            console.error('Erro ao carregar clientes:', error);
-            showToast('Erro ao carregar clientes', 'danger');
-        }
+    if (clientesArray.length === 0) {
+        tbody.innerHTML = `
+            <tr><td colspan="6" class="text-center text-muted py-4">
+                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                Nenhum cliente encontrado
+            </td></tr>
+        `;
+        return;
     }
     
-    function renderClientes(lista) {
-        const tbody = document.getElementById('clientesTable');
-        
-        if (lista.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center py-5">
-                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">Nenhum cliente encontrado</p>
-                        <button class="btn btn-primary btn-sm" onclick="openClienteModal()">
-                            <i class="fas fa-plus me-2"></i>Adicionar primeiro cliente
-                        </button>
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-        
-        tbody.innerHTML = lista.map(c => `
-            <tr>
-                <td>
-                    <div class="d-flex align-items-center">
-                        <div class="cliente-avatar">${getInitials(c.fantasia)}</div>
-                        <div>
-                            <div class="cliente-name">${c.fantasia}</div>
-                            <div class="cliente-doc">${c.documento || 'Sem documento'}</div>
-                        </div>
-                    </div>
-                </td>
-                <td>
-                    <div>${c.responsavel || '-'}</div>
-                    <small class="text-muted">${c.telefone || '-'}</small>
-                </td>
-                <td>
-                    <div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                        ${c.endereco || '-'}
-                    </div>
-                    <small class="text-muted">${c.cidade || ''}</small>
-                </td>
-                <td>
-                    <span class="status-badge status-${c.status || 'prospecto'}">
-                        ${(c.status || 'prospecto').charAt(0).toUpperCase() + (c.status || 'prospecto').slice(1)}
-                    </span>
-                </td>
-                <td>
-                    ${c.ultimaCompra ? new Date(c.ultimaCompra).toLocaleDateString('pt-BR') : 'Nunca'}
-                </td>
-                <td>
-                    <button class="btn btn-outline-primary btn-action me-1" onclick="editCliente('${c.id}')" title="Editar">
+    tbody.innerHTML = clientesArray.map(c => `
+        <tr>
+            <td>
+                <strong>${c.fantasia || c.razaoSocial}</strong>
+                ${c.documento ? `<br><small class="text-muted">${c.documento}</small>` : ''}
+            </td>
+            <td>
+                ${c.telefone || '-'}<br>
+                <small class="text-muted">${c.email || ''}</small>
+            </td>
+            <td>
+                ${c.endereco ? `${c.endereco}${c.numero ? ', ' + c.numero : ''}<br>${c.cidade || ''}` : '-'}
+            </td>
+            <td>
+                <span class="badge bg-${c.status === 'ativo' ? 'success' : c.status === 'inativo' ? 'danger' : 'warning'}">
+                    ${c.status || 'prospecto'}
+                </span>
+            </td>
+            <td>${c.ultimaCompra || 'Nunca'}</td>
+            <td>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary btn-action" onclick="editCliente('${c.id}')" title="Editar">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn btn-outline-info btn-action me-1" onclick="viewCliente('${c.id}')" title="Ver detalhes">
-                        <i class="fas fa-eye"></i>
+                    <button class="btn btn-outline-info btn-action" onclick="viewMap('${c.id}')" title="Ver no mapa">
+                        <i class="fas fa-map-marker-alt"></i>
                     </button>
                     <button class="btn btn-outline-danger btn-action" onclick="deleteCliente('${c.id}')" title="Excluir">
                         <i class="fas fa-trash"></i>
                     </button>
-                </td>
-            </tr>
-        `).join('');
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function filterClientes() {
+    const search = document.getElementById('searchCliente').value.toLowerCase();
+    const status = document.getElementById('filterStatus').value;
+    const categoria = document.getElementById('filterCategoria').value;
+    
+    let filtered = clientes.filter(c => {
+        const matchSearch = !search || 
+            (c.fantasia || '').toLowerCase().includes(search) ||
+            (c.razaoSocial || '').toLowerCase().includes(search) ||
+            (c.telefone || '').includes(search);
+        
+        const matchStatus = !status || c.status === status;
+        const matchCategoria = !categoria || c.categoria === categoria;
+        
+        return matchSearch && matchStatus && matchCategoria;
+    });
+    
+    renderClientes(filtered);
+}
+
+function openClienteModal() {
+    document.getElementById('clienteForm').reset();
+    document.getElementById('clienteId').value = '';
+    document.getElementById('clienteModalTitle').innerHTML = '<i class="fas fa-user-plus me-2"></i>Novo Cliente';
+    document.getElementById('mapContainer').style.display = 'none';
+    
+    if (clienteMap) {
+        clienteMap.remove();
+        clienteMap = null;
+        clienteMarker = null;
     }
     
-    function filterClientes() {
-        const search = document.getElementById('searchCliente').value.toLowerCase();
-        const status = document.getElementById('filterStatus').value;
-        const categoria = document.getElementById('filterCategoria').value;
+    clienteModal.show();
+}
+
+function editCliente(id) {
+    const cliente = clientes.find(c => c.id === id);
+    if (!cliente) return;
+    
+    document.getElementById('clienteId').value = id;
+    document.getElementById('fantasia').value = cliente.fantasia || '';
+    document.getElementById('documento').value = cliente.documento || '';
+    document.getElementById('razaoSocial').value = cliente.razaoSocial || '';
+    document.getElementById('responsavel').value = cliente.responsavel || '';
+    document.getElementById('telefone').value = cliente.telefone || '';
+    document.getElementById('email').value = cliente.email || '';
+    document.getElementById('whatsapp').value = cliente.whatsapp || '';
+    document.getElementById('cep').value = cliente.cep || '';
+    document.getElementById('endereco').value = cliente.endereco || '';
+    document.getElementById('numero').value = cliente.numero || '';
+    document.getElementById('bairro').value = cliente.bairro || '';
+    document.getElementById('cidade').value = cliente.cidade || '';
+    document.getElementById('status').value = cliente.status || 'prospecto';
+    document.getElementById('categoria').value = cliente.categoria || 'varejo';
+    document.getElementById('frequenciaVisita').value = cliente.frequenciaVisita || 'mensal';
+    document.getElementById('observacoes').value = cliente.observacoes || '';
+    
+    if (cliente.latitude && cliente.longitude) {
+        document.getElementById('latitude').value = cliente.latitude;
+        document.getElementById('longitude').value = cliente.longitude;
+        mostrarMapaCliente(cliente.latitude, cliente.longitude);
+    }
+    
+    document.getElementById('clienteModalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Editar Cliente';
+    clienteModal.show();
+}
+
+async function saveCliente() {
+    const id = document.getElementById('clienteId').value;
+    
+    const endereco = document.getElementById('endereco').value;
+    const numero = document.getElementById('numero').value;
+    const bairro = document.getElementById('bairro').value;
+    const cidade = document.getElementById('cidade').value;
+    const cep = document.getElementById('cep').value;
+    
+    const data = {
+        fantasia: document.getElementById('fantasia').value,
+        documento: document.getElementById('documento').value,
+        razaoSocial: document.getElementById('razaoSocial').value,
+        responsavel: document.getElementById('responsavel').value,
+        telefone: document.getElementById('telefone').value,
+        email: document.getElementById('email').value,
+        whatsapp: document.getElementById('whatsapp').value,
+        cep: cep,
+        endereco: endereco,
+        numero: numero,
+        bairro: bairro,
+        cidade: cidade,
+        status: document.getElementById('status').value,
+        categoria: document.getElementById('categoria').value,
+        frequenciaVisita: document.getElementById('frequenciaVisita').value,
+        observacoes: document.getElementById('observacoes').value,
+        latitude: document.getElementById('latitude').value || null,
+        longitude: document.getElementById('longitude').value || null
+    };
+    
+    try {
+        const url = id ? `/api/clientes/${id}` : '/api/clientes';
+        const method = id ? 'PUT' : 'POST';
         
-        let filtered = clientes.filter(c => {
-            const matchSearch = !search || 
-                c.fantasia.toLowerCase().includes(search) ||
-                (c.documento && c.documento.includes(search)) ||
-                (c.responsavel && c.responsavel.toLowerCase().includes(search));
-            const matchStatus = !status || c.status === status;
-            const matchCategoria = !categoria || c.categoria === categoria;
-            
-            return matchSearch && matchStatus && matchCategoria;
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
         });
         
-        renderClientes(filtered);
-    }
-    
-    function openClienteModal() {
-        document.getElementById('clienteForm').reset();
-        document.getElementById('clienteId').value = '';
-        document.getElementById('clienteModalTitle').innerHTML = '<i class="fas fa-user-plus me-2"></i>Novo Cliente';
-        clienteModal.show();
-    }
-    
-    async function editCliente(id) {
-        const cliente = clientes.find(c => c.id === id);
-        if (!cliente) return;
-        
-        document.getElementById('clienteId').value = id;
-        document.getElementById('fantasia').value = cliente.fantasia || '';
-        document.getElementById('documento').value = cliente.documento || '';
-        document.getElementById('razaoSocial').value = cliente.razaoSocial || '';
-        document.getElementById('responsavel').value = cliente.responsavel || '';
-        document.getElementById('telefone').value = cliente.telefone || '';
-        document.getElementById('email').value = cliente.email || '';
-        document.getElementById('whatsapp').value = cliente.whatsapp || '';
-        document.getElementById('cep').value = cliente.cep || '';
-        document.getElementById('endereco').value = cliente.endereco || '';
-        document.getElementById('numero').value = cliente.numero || '';
-        document.getElementById('bairro').value = cliente.bairro || '';
-        document.getElementById('cidade').value = cliente.cidade || '';
-        document.getElementById('status').value = cliente.status || 'prospecto';
-        document.getElementById('categoria').value = cliente.categoria || 'varejo';
-        document.getElementById('frequenciaVisita').value = cliente.frequenciaVisita || 'mensal';
-        document.getElementById('observacoes').value = cliente.observacoes || '';
-        
-        document.getElementById('clienteModalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Editar Cliente';
-        clienteModal.show();
-    }
-    
-    async function saveCliente() {
-        const id = document.getElementById('clienteId').value;
-        
-        const data = {
-            fantasia: document.getElementById('fantasia').value,
-            documento: document.getElementById('documento').value,
-            razaoSocial: document.getElementById('razaoSocial').value,
-            responsavel: document.getElementById('responsavel').value,
-            telefone: document.getElementById('telefone').value,
-            email: document.getElementById('email').value,
-            whatsapp: document.getElementById('whatsapp').value,
-            cep: document.getElementById('cep').value,
-            endereco: document.getElementById('endereco').value,
-            numero: document.getElementById('numero').value,
-            bairro: document.getElementById('bairro').value,
-            cidade: document.getElementById('cidade').value,
-            status: document.getElementById('status').value,
-            categoria: document.getElementById('categoria').value,
-            frequenciaVisita: document.getElementById('frequenciaVisita').value,
-            observacoes: document.getElementById('observacoes').value
-        };
-        
-        try {
-            const url = id ? `/api/clientes/${id}` : '/api/clientes';
-            const method = id ? 'PUT' : 'POST';
-            
-            const response = await fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            
-            if (response.ok) {
-                clienteModal.hide();
-                showToast(id ? 'Cliente atualizado!' : 'Cliente criado!', 'success');
-                loadClientes();
-            } else {
-                const error = await response.json();
-                showToast(error.error || 'Erro ao salvar', 'danger');
-            }
-        } catch (error) {
-            console.error('Erro ao salvar cliente:', error);
-            showToast('Erro ao salvar cliente', 'danger');
+        if (response.ok) {
+            clienteModal.hide();
+            showToast(id ? 'Cliente atualizado!' : 'Cliente criado!', 'success');
+            loadClientes();
+        } else {
+            const error = await response.json();
+            showToast(error.error || 'Erro ao salvar', 'danger');
         }
+    } catch (error) {
+        console.error('Erro ao salvar cliente:', error);
+        showToast('Erro ao salvar cliente', 'danger');
     }
+}
+
+async function deleteCliente(id) {
+    if (!confirm('Tem certeza que deseja excluir este cliente?')) return;
     
-    async function deleteCliente(id) {
-        if (!confirm('Tem certeza que deseja excluir este cliente?')) return;
+    try {
+        const response = await fetch(`/api/clientes/${id}`, { method: 'DELETE' });
         
-        try {
-            const response = await fetch(`/api/clientes/${id}`, { method: 'DELETE' });
-            
-            if (response.ok) {
-                showToast('Cliente excluído!', 'success');
-                loadClientes();
-            } else {
-                const error = await response.json();
-                showToast(error.error || 'Erro ao excluir', 'danger');
-            }
-        } catch (error) {
-            console.error('Erro ao excluir cliente:', error);
-            showToast('Erro ao excluir cliente', 'danger');
+        if (response.ok) {
+            showToast('Cliente excluído!', 'success');
+            loadClientes();
+        } else {
+            showToast('Erro ao excluir', 'danger');
         }
+    } catch (error) {
+        showToast('Erro ao excluir cliente', 'danger');
+    }
+}
+
+function viewMap(id) {
+    const cliente = clientes.find(c => c.id === id);
+    if (!cliente || !cliente.latitude || !cliente.longitude) {
+        showToast('Cliente sem localização definida', 'warning');
+        return;
     }
     
-    function viewCliente(id) {
-        window.location.href = `/mapa?cliente=${id}`;
-    }
+    window.location.href = `/mapa?cliente=${id}`;
+}
+
+async function buscarCEP() {
+    const cep = document.getElementById('cep').value.replace(/\D/g, '');
+    if (cep.length !== 8) return;
     
-    async function buscarCEP() {
-        const cep = document.getElementById('cep').value.replace(/\D/g, '');
-        if (cep.length !== 8) return;
+    try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
         
-        try {
-            const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-            const data = await response.json();
-            
-            if (!data.erro) {
-                document.getElementById('endereco').value = data.logradouro || '';
-                document.getElementById('bairro').value = data.bairro || '';
-                document.getElementById('cidade').value = data.localidade || '';
-            }
-        } catch (error) {
-            console.error('Erro ao buscar CEP:', error);
+        if (!data.erro) {
+            document.getElementById('endereco').value = data.logradouro;
+            document.getElementById('bairro').value = data.bairro;
+            document.getElementById('cidade').value = data.localidade;
         }
+    } catch (error) {
+        console.error('Erro ao buscar CEP:', error);
     }
-    
-    function exportClientes() {
-        const csv = [
-            ['Nome', 'Documento', 'Telefone', 'Email', 'Endereço', 'Cidade', 'Status', 'Categoria'].join(','),
-            ...clientes.map(c => [
-                c.fantasia,
-                c.documento || '',
-                c.telefone || '',
-                c.email || '',
-                c.endereco || '',
-                c.cidade || '',
-                c.status || '',
-                c.categoria || ''
-            ].join(','))
-        ].join('\n');
-        
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'clientes.csv';
-        a.click();
-    }
-    
-    function getInitials(name) {
-        return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-    }
-    
-    function showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `alert alert-${type} position-fixed`;
-        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-        toast.innerHTML = `
-            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
-            ${message}
-        `;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
-</script>
-{% endblock %}
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-let clienteMap = null;
-let clienteMarker = null;
+}
 
 function usarLocalizacaoAtual() {
     if (!navigator.geolocation) {
-        showToast('Geolocalização não suportada pelo navegador', 'error');
+        showToast('Geolocalização não suportada', 'error');
         return;
     }
     
@@ -572,7 +517,6 @@ function usarLocalizacaoAtual() {
             document.getElementById('latitude').value = lat;
             document.getElementById('longitude').value = lng;
             
-            // Reverse geocoding para preencher endereço
             try {
                 const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
                 const data = await response.json();
@@ -585,24 +529,20 @@ function usarLocalizacaoAtual() {
                     document.getElementById('cep').value = data.address.postcode || '';
                 }
                 
-                showToast('Localização obtida! Confirme os dados.', 'success');
+                showToast('Localização obtida!', 'success');
                 mostrarMapaCliente(lat, lng);
                 
             } catch (error) {
-                console.error('Erro no reverse geocoding:', error);
-                showToast('Localização obtida! Preencha o endereço manualmente.', 'warning');
+                console.error('Erro:', error);
+                showToast('Localização obtida! Preencha o endereço.', 'warning');
                 mostrarMapaCliente(lat, lng);
             }
         },
         (error) => {
             console.error('Erro de geolocalização:', error);
-            showToast('Não foi possível obter sua localização', 'error');
+            showToast('Não foi possível obter localização', 'error');
         },
-        {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-        }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
 }
 
@@ -610,10 +550,9 @@ async function confirmarEndereco() {
     const endereco = document.getElementById('endereco').value;
     const numero = document.getElementById('numero').value;
     const cidade = document.getElementById('cidade').value;
-    const cep = document.getElementById('cep').value;
     
     if (!endereco || !cidade) {
-        showToast('Preencha o endereço e cidade primeiro', 'warning');
+        showToast('Preencha endereço e cidade', 'warning');
         return;
     }
     
@@ -633,12 +572,12 @@ async function confirmarEndereco() {
             document.getElementById('longitude').value = lng;
             
             mostrarMapaCliente(lat, lng);
-            showToast('Localização encontrada! Ajuste o marcador se necessário.', 'success');
+            showToast('Localização encontrada!', 'success');
         } else {
-            showToast('Endereço não encontrado. Use "Minha Localização" ou corrija o endereço.', 'warning');
+            showToast('Endereço não encontrado', 'warning');
         }
     } catch (error) {
-        console.error('Erro ao buscar coordenadas:', error);
+        console.error('Erro:', error);
         showToast('Erro ao buscar localização', 'error');
     }
 }
@@ -651,12 +590,10 @@ function mostrarMapaCliente(lat, lng) {
         clienteMap = L.map('clienteMap').setView([lat, lng], 16);
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
+            attribution: '© OpenStreetMap'
         }).addTo(clienteMap);
         
-        clienteMarker = L.marker([lat, lng], {
-            draggable: true
-        }).addTo(clienteMap);
+        clienteMarker = L.marker([lat, lng], { draggable: true }).addTo(clienteMap);
         
         clienteMarker.on('dragend', function(e) {
             const pos = e.target.getLatLng();
@@ -668,9 +605,25 @@ function mostrarMapaCliente(lat, lng) {
         clienteMarker.setLatLng([lat, lng]);
     }
     
-    // Scroll suave até o mapa
     setTimeout(() => {
+        clienteMap.invalidateSize();
         container.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
 }
+
+function showToast(message, type) {
+    const colors = { success: '#10b981', error: '#ef4444', danger: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed; top: 20px; right: 20px; z-index: 9999;
+        background: ${colors[type] || '#6264A7'}; color: white;
+        padding: 16px 24px; border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        font-weight: 600; animation: slideIn 0.3s ease;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
 </script>
+{% endblock %}

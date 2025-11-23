@@ -3,135 +3,165 @@
 {% block title %}Dashboard - ComercialPRO{% endblock %}
 
 {% block content %}
-<div class="dashboard-content">
-    <!-- Header Stats -->
-    <div class="row g-4 mb-4">
-        <div class="col-xl-3 col-md-6">
-            <div class="stat-card">
-                <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+<div class="modern-container">
+    <!-- Header -->
+    <div class="teams-header mb-4">
+        <div class="header-left">
+            <i class="fas fa-chart-line header-icon"></i>
+            <div>
+                <h1 class="header-title">Dashboard</h1>
+                <p class="header-subtitle">Visão geral do seu desempenho</p>
+            </div>
+        </div>
+        <button class="btn-teams-primary" onclick="loadDashboard()">
+            <i class="fas fa-sync-alt"></i>
+            Atualizar
+        </button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card-large">
+                <div class="stat-icon bg-primary">
                     <i class="fas fa-dollar-sign"></i>
                 </div>
-                <div class="stat-info">
-                    <h3 id="vendasMes">R$ 0</h3>
-                    <p>Vendas do Mês</p>
-                    <span class="stat-badge positive" id="crescimentoVendas">
-                        <i class="fas fa-arrow-up"></i> 0%
-                    </span>
+                <div>
+                    <div class="stat-label">Vendas do Mês</div>
+                    <div class="stat-value" id="vendasMes">R$ 0</div>
+                    <div class="stat-change" id="vendasChange">0%</div>
                 </div>
             </div>
         </div>
         
-        <div class="col-xl-3 col-md-6">
-            <div class="stat-card">
-                <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+        <div class="col-md-3">
+            <div class="stat-card-large">
+                <div class="stat-icon bg-success">
                     <i class="fas fa-users"></i>
                 </div>
-                <div class="stat-info">
-                    <h3 id="totalClientes">0</h3>
-                    <p>Total de Clientes</p>
-                    <span class="stat-badge positive" id="clientesNovos">
-                        <i class="fas fa-plus"></i> 0 novos
-                    </span>
+                <div>
+                    <div class="stat-label">Total de Clientes</div>
+                    <div class="stat-value" id="totalClientes">0</div>
+                    <div class="stat-change" id="clientesChange">+0 novos</div>
                 </div>
             </div>
         </div>
         
-        <div class="col-xl-3 col-md-6">
-            <div class="stat-card">
-                <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+        <div class="col-md-3">
+            <div class="stat-card-large">
+                <div class="stat-icon bg-warning">
                     <i class="fas fa-calendar-check"></i>
                 </div>
-                <div class="stat-info">
-                    <h3 id="compromissosHoje">0</h3>
-                    <p>Compromissos Hoje</p>
-                    <span class="stat-badge info" id="compromissosPendentes">
-                        <i class="fas fa-clock"></i> 0 pendentes
-                    </span>
+                <div>
+                    <div class="stat-label">Compromissos Hoje</div>
+                    <div class="stat-value" id="compromissosHoje">0</div>
+                    <div class="stat-change" id="pendentesText">0 pendentes</div>
                 </div>
             </div>
         </div>
         
-        <div class="col-xl-3 col-md-6">
-            <div class="stat-card">
-                <div class="stat-icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+        <div class="col-md-3">
+            <div class="stat-card-large">
+                <div class="stat-icon bg-danger">
                     <i class="fas fa-bullseye"></i>
                 </div>
-                <div class="stat-info">
-                    <h3 id="percentualMeta">0%</h3>
-                    <p>Meta do Mês</p>
-                    <div class="progress mt-2" style="height: 6px;">
-                        <div class="progress-bar" id="progressoMeta" style="width: 0%;"></div>
-                    </div>
+                <div>
+                    <div class="stat-label">Meta do Mês</div>
+                    <div class="stat-value" id="metaMes">0%</div>
+                    <div class="stat-change" id="metaStatus">Sem meta</div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- Charts Row -->
-    <div class="row g-4 mb-4">
-        <div class="col-lg-8">
-            <div class="card-custom">
-                <div class="card-header-custom">
-                    <h5 class="mb-0">
-                        <i class="fas fa-chart-line me-2"></i>
-                        Vendas nos Últimos 6 Meses
-                    </h5>
+
+    <div class="row g-3">
+        <!-- Vendas Chart -->
+        <div class="col-md-8">
+            <div class="teams-card">
+                <h6 class="card-title">
+                    <i class="fas fa-chart-bar me-2"></i>Vendas nos Últimos 6 Meses
+                </h6>
+                <div id="vendasChartContainer" style="height: 300px;">
+                    <canvas id="vendasChart"></canvas>
                 </div>
-                <div class="card-body">
-                    <canvas id="vendasChart" height="300"></canvas>
+                <div id="noVendasData" class="empty-state" style="display: none;">
+                    <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                    <h5>Sem dados de vendas</h5>
+                    <p class="text-muted">Comece a registrar pedidos para ver seus gráficos aqui</p>
+                    <a href="/pedidos" class="btn-teams-primary">
+                        <i class="fas fa-plus me-2"></i>Criar Pedido
+                    </a>
                 </div>
             </div>
         </div>
-        
-        <div class="col-lg-4">
-            <div class="card-custom">
-                <div class="card-header-custom">
-                    <h5 class="mb-0">
-                        <i class="fas fa-chart-pie me-2"></i>
-                        Status dos Clientes
-                    </h5>
+
+        <!-- Status Clientes -->
+        <div class="col-md-4">
+            <div class="teams-card">
+                <h6 class="card-title">
+                    <i class="fas fa-pie-chart me-2"></i>Status dos Clientes
+                </h6>
+                <div id="clientesChartContainer" style="height: 300px;">
+                    <canvas id="clientesChart"></canvas>
                 </div>
-                <div class="card-body">
-                    <canvas id="clientesChart" height="260"></canvas>
+                <div id="noClientesData" class="empty-state" style="display: none;">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <h5>Sem clientes</h5>
+                    <p class="text-muted">Cadastre seus primeiros clientes</p>
+                    <a href="/clientes" class="btn-teams-primary">
+                        <i class="fas fa-plus me-2"></i>Cadastrar Cliente
+                    </a>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- Bottom Row -->
-    <div class="row g-4">
-        <div class="col-lg-6">
-            <div class="card-custom">
-                <div class="card-header-custom">
-                    <h5 class="mb-0">
-                        <i class="fas fa-clock me-2"></i>
-                        Próximos Compromissos
-                    </h5>
-                    <a href="/agenda" class="btn btn-sm btn-outline-primary">Ver todos</a>
+
+    <!-- Próximos Compromissos e Últimos Pedidos -->
+    <div class="row g-3 mt-3">
+        <div class="col-md-6">
+            <div class="teams-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-clock me-2"></i>Próximos Compromissos
+                    </h6>
+                    <a href="/agenda" class="text-primary">Ver todos</a>
                 </div>
-                <div class="card-body" id="proximosCompromissos">
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-spinner fa-spin fa-2x"></i>
-                        <p class="mt-2">Carregando...</p>
+                <div id="proximosCompromissos">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status"></div>
                     </div>
+                </div>
+                <div id="noCompromissosData" class="empty-state" style="display: none;">
+                    <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                    <h5>Sem compromissos</h5>
+                    <p class="text-muted">Agende suas próximas visitas</p>
+                    <a href="/agenda" class="btn-teams-primary">
+                        <i class="fas fa-plus me-2"></i>Criar Compromisso
+                    </a>
                 </div>
             </div>
         </div>
-        
-        <div class="col-lg-6">
-            <div class="card-custom">
-                <div class="card-header-custom">
-                    <h5 class="mb-0">
-                        <i class="fas fa-shopping-cart me-2"></i>
-                        Últimos Pedidos
-                    </h5>
-                    <a href="/pedidos" class="btn btn-sm btn-outline-primary">Ver todos</a>
+
+        <div class="col-md-6">
+            <div class="teams-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-shopping-cart me-2"></i>Últimos Pedidos
+                    </h6>
+                    <a href="/pedidos" class="text-primary">Ver todos</a>
                 </div>
-                <div class="card-body" id="ultimosPedidos">
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-spinner fa-spin fa-2x"></i>
-                        <p class="mt-2">Carregando...</p>
+                <div id="ultimosPedidos">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status"></div>
                     </div>
+                </div>
+                <div id="noPedidosData" class="empty-state" style="display: none;">
+                    <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
+                    <h5>Sem pedidos</h5>
+                    <p class="text-muted">Crie seu primeiro pedido</p>
+                    <a href="/pedidos" class="btn-teams-primary">
+                        <i class="fas fa-plus me-2"></i>Novo Pedido
+                    </a>
                 </div>
             </div>
         </div>
@@ -139,209 +169,249 @@
 </div>
 
 <style>
-    .stat-card {
-        background: white;
-        border-radius: 15px;
-        padding: 25px;
-        display: flex;
-        align-items: center;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-        transition: all 0.3s ease;
-    }
-    
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    }
-    
-    .stat-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 15px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 20px;
-        color: white;
-        font-size: 1.5rem;
-    }
-    
-    .stat-info h3 {
-        margin: 0;
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #1e293b;
-    }
-    
-    .stat-info p {
-        margin: 5px 0 0;
-        color: #64748b;
-        font-size: 0.9rem;
-    }
-    
-    .stat-badge {
-        display: inline-block;
-        padding: 3px 10px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        margin-top: 8px;
-    }
-    
-    .stat-badge.positive {
-        background: rgba(16, 185, 129, 0.1);
-        color: #10b981;
-    }
-    
-    .stat-badge.negative {
-        background: rgba(239, 68, 68, 0.1);
-        color: #ef4444;
-    }
-    
-    .stat-badge.info {
-        background: rgba(245, 158, 11, 0.1);
-        color: #f59e0b;
-    }
-    
-    .card-custom {
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-        overflow: hidden;
-    }
-    
-    .card-header-custom {
-        padding: 20px 25px;
-        border-bottom: 1px solid #f1f5f9;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    
-    .card-header-custom h5 {
-        color: #1e293b;
-        font-weight: 600;
-    }
-    
-    .compromisso-item, .pedido-item {
-        display: flex;
-        align-items: center;
-        padding: 15px 0;
-        border-bottom: 1px solid #f1f5f9;
-    }
-    
-    .compromisso-item:last-child, .pedido-item:last-child {
-        border-bottom: none;
-    }
-    
-    .compromisso-icon, .pedido-icon {
-        width: 45px;
-        height: 45px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 15px;
-        font-size: 1.1rem;
-    }
-    
-    .compromisso-info, .pedido-info {
-        flex: 1;
-    }
-    
-    .compromisso-info h6, .pedido-info h6 {
-        margin: 0;
-        font-weight: 600;
-        color: #1e293b;
-    }
-    
-    .compromisso-info p, .pedido-info p {
-        margin: 3px 0 0;
-        font-size: 0.85rem;
-        color: #64748b;
-    }
-    
-    .compromisso-time, .pedido-value {
-        text-align: right;
-    }
-    
-    .compromisso-time span, .pedido-value span {
-        display: block;
-        font-weight: 600;
-        color: #667eea;
-    }
-    
-    .compromisso-time small, .pedido-value small {
-        color: #94a3b8;
-        font-size: 0.8rem;
-    }
+.modern-container {
+    padding: 24px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.teams-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-icon {
+    font-size: 32px;
+    color: #6264A7;
+}
+
+.header-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #252423;
+    margin: 0;
+}
+
+.header-subtitle {
+    color: #616161;
+    margin: 4px 0 0 0;
+    font-size: 14px;
+}
+
+.btn-teams-primary {
+    background: #6264A7;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.btn-teams-primary:hover {
+    background: #5558a5;
+    color: white;
+}
+
+.stat-card-large {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.stat-icon.bg-primary { background: #6264A7; }
+.stat-icon.bg-success { background: #10B981; }
+.stat-icon.bg-warning { background: #F59E0B; }
+.stat-icon.bg-danger { background: #EF4444; }
+
+.stat-label {
+    font-size: 12px;
+    color: #616161;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #252423;
+}
+
+.stat-change {
+    font-size: 13px;
+    color: #10B981;
+    margin-top: 4px;
+}
+
+.teams-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    padding: 24px;
+}
+
+.card-title {
+    font-weight: 600;
+    color: #252423;
+    display: flex;
+    align-items: center;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-state h5 {
+    color: #252423;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    color: #616161;
+    margin-bottom: 20px;
+}
+
+.compromisso-item, .pedido-item {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border-left: 4px solid #6264A7;
+    background: #f8f9fa;
+}
+
+.compromisso-item h6, .pedido-item h6 {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.compromisso-item p, .pedido-item p {
+    margin: 0;
+    font-size: 13px;
+    color: #616161;
+}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
-    let vendasChart, clientesChart;
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        loadDashboardStats();
-        loadProximosCompromissos();
-        loadUltimosPedidos();
-        loadVendasHistorico();
-    });
-    
-    
-    // ============ Carrega vendas dos últimos 6 meses da API ============
-    async function loadVendasHistorico() {
-        try {
-            const response = await fetch('/api/dashboard/vendas-historico');
-            const data = await response.json();
-            updateVendasChart(data);
-        } catch (error) {
-            console.error('Erro ao carregar histórico de vendas:', error);
-            updateVendasChart([
-                {mes: 'Jan', valor: 0}, {mes: 'Fev', valor: 0},
-                {mes: 'Mar', valor: 0}, {mes: 'Abr', valor: 0},
-                {mes: 'Mai', valor: 0}, {mes: 'Jun', valor: 0}
-            ]);
-        }
+let vendasChart = null;
+let clientesChart = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboard();
+});
+
+async function loadDashboard() {
+    try {
+        // Stats
+        await loadStats();
+        
+        // Charts
+        await loadVendasChart();
+        await loadClientesChart();
+        
+        // Lists
+        await loadProximosCompromissos();
+        await loadUltimosPedidos();
+        
+    } catch (error) {
+        console.error('Erro ao carregar dashboard:', error);
     }
-    
-    // ============ Atualiza gráfico de vendas ============
-    function updateVendasChart(dados) {
-        const ctx = document.getElementById('vendasChart').getContext('2d');
-        if (vendasChart) vendasChart.destroy();
+}
+
+async function loadStats() {
+    try {
+        const response = await fetch('/api/dashboard/stats');
+        const stats = await response.json();
+        
+        document.getElementById('vendasMes').textContent = 
+            `R$ ${(stats.vendasMes || 0).toLocaleString('pt-BR')}`;
+        document.getElementById('totalClientes').textContent = stats.totalClientes || 0;
+        document.getElementById('compromissosHoje').textContent = stats.compromissosHoje || 0;
+        document.getElementById('metaMes').textContent = `${stats.metaMes || 0}%`;
+        
+        document.getElementById('vendasChange').textContent = 
+            `${stats.vendasChange >= 0 ? '+' : ''}${stats.vendasChange || 0}%`;
+        document.getElementById('clientesChange').textContent = 
+            `+${stats.clientesNovos || 0} novos`;
+        document.getElementById('pendentesText').textContent = 
+            `${stats.compromissosPendentes || 0} pendentes`;
+        document.getElementById('metaStatus').textContent = 
+            stats.metaMes >= 100 ? 'Meta atingida! 🎉' : 'Em progresso';
+        
+    } catch (error) {
+        console.error('Erro ao carregar stats:', error);
+    }
+}
+
+async function loadVendasChart() {
+    try {
+        const response = await fetch('/api/dashboard/vendas-mes');
+        const data = await response.json();
+        
+        if (!data || data.length === 0) {
+            document.getElementById('vendasChartContainer').style.display = 'none';
+            document.getElementById('noVendasData').style.display = 'block';
+            return;
+        }
+        
+        document.getElementById('vendasChartContainer').style.display = 'block';
+        document.getElementById('noVendasData').style.display = 'none';
+        
+        const ctx = document.getElementById('vendasChart');
+        
+        if (vendasChart) {
+            vendasChart.destroy();
+        }
         
         vendasChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: dados.map(d => d.mes),
+                labels: data.map(d => d.mes),
                 datasets: [{
-                    label: 'Vendas',
-                    data: dados.map(d => d.valor),
-                    borderColor: '#667eea',
-                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                    fill: true,
+                    label: 'Vendas (R$)',
+                    data: data.map(d => d.valor),
+                    borderColor: '#6264A7',
+                    backgroundColor: 'rgba(98, 100, 167, 0.1)',
                     tension: 0.4,
-                    borderWidth: 3,
-                    pointBackgroundColor: '#667eea',
-                    pointRadius: 5,
-                    pointHoverRadius: 8
+                    fill: true
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return 'Vendas: R$ ' + context.parsed.y.toLocaleString('pt-BR', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2
-                                });
-                            }
-                        }
-                    }
+                    legend: { display: false }
                 },
                 scales: {
                     y: {
@@ -355,172 +425,40 @@
                 }
             }
         });
+    } catch (error) {
+        console.error('Erro ao carregar gráfico de vendas:', error);
+        document.getElementById('vendasChartContainer').style.display = 'none';
+        document.getElementById('noVendasData').style.display = 'block';
     }
+}
 
-    async function loadDashboardStats() {
-        try {
-            const response = await fetch('/api/dashboard/stats');
-            const data = await response.json();
-            
-            // Vendas
-            document.getElementById('vendasMes').textContent = 
-                `R$ ${data.vendas.mes.toLocaleString('pt-BR')}`;
-            document.getElementById('crescimentoVendas').innerHTML = 
-                `<i class="fas fa-arrow-up"></i> ${data.vendas.crescimento}%`;
-            
-            // Meta
-            document.getElementById('percentualMeta').textContent = 
-                `${data.vendas.percentual.toFixed(1)}%`;
-            document.getElementById('progressoMeta').style.width = 
-                `${Math.min(data.vendas.percentual, 100)}%`;
-            
-            // Clientes
-            document.getElementById('totalClientes').textContent = data.clientes.total;
-            document.getElementById('clientesNovos').innerHTML = 
-                `<i class="fas fa-plus"></i> ${data.clientes.novos} novos`;
-            
-            // Compromissos
-            document.getElementById('compromissosHoje').textContent = data.compromissos.hoje;
-            document.getElementById('compromissosPendentes').innerHTML = 
-                `<i class="fas fa-clock"></i> ${data.compromissos.pendentes} pendentes`;
-            
-            // Atualiza gráfico de clientes
-            updateClientesChart(data.clientes);
-            
-        } catch (error) {
-            console.error('Erro ao carregar stats:', error);
-        }
-    }
-    
-    async function loadProximosCompromissos() {
-        try {
-            const response = await fetch('/api/compromissos?limit=5');
-            const compromissos = await response.json();
-            
-            const container = document.getElementById('proximosCompromissos');
-            
-            if (compromissos.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-calendar-times fa-2x mb-2"></i>
-                        <p>Nenhum compromisso agendado</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = compromissos.slice(0, 5).map(c => `
-                <div class="compromisso-item">
-                    <div class="compromisso-icon" style="background: ${getTipoColor(c.tipo)}15; color: ${getTipoColor(c.tipo)};">
-                        <i class="fas ${getTipoIcon(c.tipo)}"></i>
-                    </div>
-                    <div class="compromisso-info">
-                        <h6>${c.titulo}</h6>
-                        <p>${c.cliente || 'Sem cliente'}</p>
-                    </div>
-                    <div class="compromisso-time">
-                        <span>${c.horaInicio || c.hora}</span>
-                        <small>${formatDate(c.data)}</small>
-                    </div>
-                </div>
-            `).join('');
-            
-        } catch (error) {
-            console.error('Erro ao carregar compromissos:', error);
-        }
-    }
-    
-    async function loadUltimosPedidos() {
-        try {
-            const response = await fetch('/api/pedidos?limit=5');
-            const pedidos = await response.json();
-            
-            const container = document.getElementById('ultimosPedidos');
-            
-            if (pedidos.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-shopping-bag fa-2x mb-2"></i>
-                        <p>Nenhum pedido registrado</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = pedidos.slice(0, 5).map(p => `
-                <div class="pedido-item">
-                    <div class="pedido-icon" style="background: ${getStatusColor(p.status)}15; color: ${getStatusColor(p.status)};">
-                        <i class="fas fa-receipt"></i>
-                    </div>
-                    <div class="pedido-info">
-                        <h6>Pedido #${p.id.slice(-6)}</h6>
-                        <p>${p.clienteNome || 'Cliente'}</p>
-                    </div>
-                    <div class="pedido-value">
-                        <span>R$ ${(p.valorTotal || 0).toLocaleString('pt-BR')}</span>
-                        <small>${p.status || 'Pendente'}</small>
-                    </div>
-                </div>
-            `).join('');
-            
-        } catch (error) {
-            console.error('Erro ao carregar pedidos:', error);
-        }
-    }
-    
-    /* FUNÇÃO ANTIGA - REMOVIDA
-function initCharts() {
-        // Chart de vendas
-        const ctxVendas = document.getElementById('vendasChart').getContext('2d');
-        vendasChart = new Chart(ctxVendas, {
-            type: 'line',
-            data: {
-                labels: ['Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-                datasets: [{
-                    label: 'Vendas',
-                    data: [85000, 92000, 88000, 105000, 125000, 135000],
-                    borderColor: '#667eea',
-                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    borderWidth: 3,
-                    pointBackgroundColor: '#667eea',
-                    pointRadius: 5,
-                    pointHoverRadius: 8
-                }
-*/]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return 'R$ ' + (value/1000) + 'k';
-                            }
-                        }
-                    }
-                }
-            }
-        });
+async function loadClientesChart() {
+    try {
+        const response = await fetch('/api/dashboard/clientes-status');
+        const data = await response.json();
         
-        // Chart de clientes (placeholder)
-        const ctxClientes = document.getElementById('clientesChart').getContext('2d');
-        clientesChart = new Chart(ctxClientes, {
+        if (!data || data.length === 0) {
+            document.getElementById('clientesChartContainer').style.display = 'none';
+            document.getElementById('noClientesData').style.display = 'block';
+            return;
+        }
+        
+        document.getElementById('clientesChartContainer').style.display = 'block';
+        document.getElementById('noClientesData').style.display = 'none';
+        
+        const ctx = document.getElementById('clientesChart');
+        
+        if (clientesChart) {
+            clientesChart.destroy();
+        }
+        
+        clientesChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['Ativos', 'Inativos', 'Novos'],
+                labels: data.map(d => d.status),
                 datasets: [{
-                    data: [38, 7, 5],
-                    backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
-                    borderWidth: 0
+                    data: data.map(d => d.quantidade),
+                    backgroundColor: ['#10B981', '#6264A7', '#F59E0B', '#6B7280']
                 }]
             },
             options: {
@@ -530,59 +468,77 @@ function initCharts() {
                     legend: {
                         position: 'bottom'
                     }
-                },
-                cutout: '70%'
+                }
             }
         });
+    } catch (error) {
+        console.error('Erro ao carregar gráfico de clientes:', error);
+        document.getElementById('clientesChartContainer').style.display = 'none';
+        document.getElementById('noClientesData').style.display = 'block';
     }
-    
-    function updateClientesChart(data) {
-        if (clientesChart) {
-            clientesChart.data.datasets[0].data = [
-                data.ativos,
-                data.ausentes,
-                data.novos
-            ];
-            clientesChart.update();
+}
+
+async function loadProximosCompromissos() {
+    try {
+        const response = await fetch('/api/compromissos?limit=5');
+        const compromissos = await response.json();
+        
+        const container = document.getElementById('proximosCompromissos');
+        
+        if (!compromissos || compromissos.length === 0) {
+            container.style.display = 'none';
+            document.getElementById('noCompromissosData').style.display = 'block';
+            return;
         }
+        
+        container.style.display = 'block';
+        document.getElementById('noCompromissosData').style.display = 'none';
+        
+        container.innerHTML = compromissos.slice(0, 5).map(c => `
+            <div class="compromisso-item">
+                <h6>${c.titulo}</h6>
+                <p><i class="fas fa-calendar me-2"></i>${c.data} às ${c.horaInicio || c.hora}</p>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Erro ao carregar compromissos:', error);
+        document.getElementById('proximosCompromissos').style.display = 'none';
+        document.getElementById('noCompromissosData').style.display = 'block';
     }
-    
-    function getTipoColor(tipo) {
-        const colors = {
-            'visita': '#667eea',
-            'reuniao': '#10b981',
-            'ligacao': '#f59e0b',
-            'entrega': '#06b6d4',
-            'outro': '#64748b'
-        };
-        return colors[tipo] || '#64748b';
+}
+
+async function loadUltimosPedidos() {
+    try {
+        const response = await fetch('/api/pedidos?limit=5');
+        const pedidos = await response.json();
+        
+        const container = document.getElementById('ultimosPedidos');
+        
+        if (!pedidos || pedidos.length === 0) {
+            container.style.display = 'none';
+            document.getElementById('noPedidosData').style.display = 'block';
+            return;
+        }
+        
+        container.style.display = 'block';
+        document.getElementById('noPedidosData').style.display = 'none';
+        
+        container.innerHTML = pedidos.slice(0, 5).map(p => `
+            <div class="pedido-item">
+                <h6>Pedido #${p.id.slice(-6)}</h6>
+                <p>
+                    <i class="fas fa-user me-2"></i>${p.clienteNome || 'Cliente'}
+                    <span class="ms-3"><i class="fas fa-dollar-sign me-1"></i>R$ ${(p.valorTotal || 0).toFixed(2)}</span>
+                </p>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Erro ao carregar pedidos:', error);
+        document.getElementById('ultimosPedidos').style.display = 'none';
+        document.getElementById('noPedidosData').style.display = 'block';
     }
-    
-    function getTipoIcon(tipo) {
-        const icons = {
-            'visita': 'fa-map-marker-alt',
-            'reuniao': 'fa-handshake',
-            'ligacao': 'fa-phone',
-            'entrega': 'fa-truck',
-            'outro': 'fa-calendar'
-        };
-        return icons[tipo] || 'fa-calendar';
-    }
-    
-    function getStatusColor(status) {
-        const colors = {
-            'pendente': '#f59e0b',
-            'aprovado': '#10b981',
-            'cancelado': '#ef4444',
-            'entregue': '#667eea'
-        };
-        return colors[status] || '#64748b';
-    }
-    
-    function formatDate(dateStr) {
-        if (!dateStr) return '';
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('pt-BR');
-    }
+}
 </script>
 {% endblock %}
